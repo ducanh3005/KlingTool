@@ -356,20 +356,26 @@
             text-decoration: underline;
         }
         
+        .download {
+            margin-top: 10px;
+            display: none;
+        }
+        
         .download-btn {
+            display: inline-block;
+            padding: 8px 16px;
             background: #28a745;
             color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin: 5px 5px 5px 0;
-            transition: background 0.3s;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.3s;
         }
         
         .download-btn:hover {
             background: #218838;
+            color: white;
+            text-decoration: none;
         }
         
         .download-btn:disabled {
@@ -748,6 +754,7 @@
             results.forEach((result, index) => {
                 const card = document.createElement('div');
                 card.className = `result-card ${result.status}`;
+                card.setAttribute('data-task-id', result.videoTask ? result.videoTask.taskId : '');
                 
                 const statusBadge = result.status === 'success' 
                     ? '<span class="status-badge success">✓ Success</span>' 
@@ -866,7 +873,7 @@
                     
                     if (data.success && data.data) {
                         console.log(`Task ${result.videoTask.taskId} response:`, JSON.stringify(data.data, null, 2));
-                        updateTaskStatus(result, data.data);
+                        updateTaskStatus(result.videoTask.taskId, JSON.stringify(data.data));
                     } else {
                         console.log(`Task ${result.videoTask.taskId} failed response:`, data);
                     }
@@ -876,257 +883,74 @@
             }
         }
 
-        function updateTaskStatus(result, statusData) {
-            console.log(`=== UPDATING TASK ${result.videoTask.taskId} ===`);
+        function updateTaskStatus(taskId, response) {
+            console.log('Updating task status for:', taskId);
+            console.log('Response:', response);
             
-            // Find the card with matching task ID
-            const cards = document.querySelectorAll('.result-card');
-            let targetCard = null;
-            
-            cards.forEach(card => {
-                const taskIdElement = card.querySelector('.task-id');
-                if (taskIdElement && taskIdElement.textContent.trim() === result.videoTask.taskId) {
-                    targetCard = card;
-                }
-            });
-            
-            if (!targetCard) {
-                console.log(`No card found for task ${result.videoTask.taskId}`);
+            // Find the card with this task ID
+            const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (!taskCard) {
+                console.log('Task card not found for ID:', taskId);
                 return;
             }
             
-            console.log(`Found card for task ${result.videoTask.taskId}`);
-            
-            // Get elements
-            const timeEstimateElement = targetCard.querySelector('.time-estimate');
-            const downloadElement = targetCard.querySelector('.download');
+            // Find elements to update
+            const timeEstimateElement = taskCard.querySelector('.time-estimate');
+            const downloadElement = taskCard.querySelector('.download');
             
             if (!timeEstimateElement || !downloadElement) {
-                console.log('Missing required elements in card');
+                console.log('Required elements not found');
                 return;
             }
             
-            // Parse status data
-            if (!statusData.data || statusData.data.length === 0) {
-                console.log('No status data available');
-                return;
-            }
-            
-            const history = statusData.data[0];
-            const work = history.works && history.works[0];
-            
-            if (!work) {
-                console.log('No work data available');
-                return;
-            }
-            
-            console.log(`Status: ${work.status}, etaTime: ${history.etaTime}`);
-            
-            // Calculate ETA time
-            const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
-            const etaMinutes = Math.round(etaTimeMs / 60000);
-            
-            // Update UI based on status
-            if (work.status === 99 || work.status === 3) {
-                // Completed
-                timeEstimateElement.textContent = 'Completed';
+            try {
+                // Parse response safely
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                console.log('Parsed data:', data);
                 
-                // Show download if video available
-                if (work.resource && work.resource.resource && work.resource.resource.trim() !== '') {
-                    downloadElement.style.display = 'block';
-                    downloadElement.innerHTML = `
-                        <button onclick="downloadVideo('${work.resource.resource}', '${work.workName || 'video'}')" 
-                                style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                            📥 Download Video
-                        </button>
-                        <small style="display: block; margin-top: 5px; color: #666;">
-                            Duration: ${Math.round(work.resource.duration / 1000)}s
-                        </small>
-                    `;
+                if (!data || !data.data || !data.data.history || !data.data.history[0]) {
+                    console.log('Invalid response structure');
+                    return;
                 }
-                completedTasks.add(result.videoTask.taskId);
                 
-            } else if (work.status === 10 || work.status === 4) {
-                // Failed
-                const errorMsg = work.errorDetail || 'Task failed';
-                if (etaMinutes > 0) {
-                    timeEstimateElement.textContent = `${etaMinutes} phút còn lại (task failed)`;
-                } else {
-                    timeEstimateElement.textContent = `Failed: ${errorMsg}`;
-                }
-                completedTasks.add(result.videoTask.taskId);
+                const history = data.data.history[0];
+                const task = history.task;
+                const works = history.works && history.works[0];
                 
-            } else if (work.status === 1) {
-                // Queued
-                timeEstimateElement.textContent = 'Waiting in queue...';
+                console.log('Task:', task);
+                console.log('Works:', works);
                 
-            } else {
-                // Processing (status 2, 5, etc.)
-                if (etaMinutes > 0) {
-                    timeEstimateElement.textContent = `${etaMinutes} phút còn lại`;
+                // Update time estimate - show actual etaTime from API
+                if (history.etaTime && history.etaTime > 0) {
+                    const etaTimeMs = history.etaTime - history.currentTimestamp;
+                    if (etaTimeMs > 0) {
+                        const etaMinutes = Math.round(etaTimeMs / 60000);
+                        timeEstimateElement.textContent = `ETA: ${etaMinutes} minutes`;
+                        timeEstimateElement.style.color = '#ff6b35';
+                    } else {
+                        timeEstimateElement.textContent = 'Processing...';
+                        timeEstimateElement.style.color = '#007bff';
+                    }
                 } else {
                     timeEstimateElement.textContent = 'Processing...';
+                    timeEstimateElement.style.color = '#007bff';
                 }
+                
+                // Update download button - show if resource exists
+                if (works && works.resource && works.resource.resource) {
+                    downloadElement.innerHTML = `<a href="${works.resource.resource}" target="_blank" class="download-btn">Download MP4</a>`;
+                    downloadElement.style.display = 'block';
+                    timeEstimateElement.textContent = 'Completed ✓';
+                    timeEstimateElement.style.color = '#28a745';
+                } else {
+                    downloadElement.style.display = 'none';
+                }
+                
+                console.log('UI updated successfully');
+                
+            } catch (error) {
+                console.error('Error updating task status:', error);
             }
-        }
-
-        function updateTaskStatus_OLD(result, statusData) {
-             console.log(`=== UPDATING TASK STATUS FOR ${result.videoTask.taskId} ===`);
-             console.log(`Status data:`, statusData);
-             console.log(`Works data:`, statusData.data && statusData.data.length > 0 ? statusData.data[0].works : 'No works data');
-             const cards = document.querySelectorAll('.result-card');
-             console.log(`Found ${cards.length} cards`);
-            
-            cards.forEach(card => {
-                const taskIdElement = card.querySelector('.task-id');
-                console.log(`Card task ID: ${taskIdElement ? taskIdElement.textContent : 'not found'}, looking for: ${result.videoTask.taskId}`);
-                if (taskIdElement && taskIdElement.textContent === result.videoTask.taskId.toString()) {
-                    console.log(`Found matching card for task ${result.videoTask.taskId}`);
-                                                              const videoTaskInfo = card.querySelector('.video-task-info');
-                     const timeEstimateElement = videoTaskInfo ? videoTaskInfo.querySelector('.time-estimate') : null;
-                     const downloadElement = videoTaskInfo ? videoTaskInfo.querySelector('.download') : null;
-                     
-                     console.log(`Card elements found:`, {
-                         videoTaskInfo: !!videoTaskInfo,
-                         timeEstimateElement: !!timeEstimateElement,
-                         downloadElement: !!downloadElement
-                     });
-                     
-                     if (!videoTaskInfo) {
-                         console.error('video-task-info not found in card');
-                         return;
-                     }
-                    
-                    if (statusData.data && statusData.data.length > 0) {
-                        const history = statusData.data[0];
-                        console.log(`History data:`, history);
-                        if (history.works && history.works.length > 0) {
-                            const work = history.works[0];
-                            console.log(`Work status: ${work.status}, resource: ${work.resource ? work.resource.resource : 'no resource'}`);
-                            
-                                                         // Check if task has error
-                             if (work.errorDetail) {
-                                 completedTasks.add(result.videoTask.taskId);
-                                 
-                                 // Show error message in time estimate element
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = `Failed: ${work.errorDetail}`;
-                                 }
-                                 return;
-                             }
-                            
-                                                         if (work.status === 99) { // Completed
-                                 completedTasks.add(result.videoTask.taskId);
-                                 
-                                 // Show completion message in time estimate element
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = 'Completed';
-                                 }
-                                 
-                                 // Add video URL if available and has real MP4 link
-                                 if (work.resource && work.resource.resource && work.resource.resource.trim() !== "" && downloadElement) {
-                                     downloadElement.style.display = 'block';
-                                     downloadElement.innerHTML = `
-                                         <button class="download-btn" onclick="downloadVideo('${work.resource.resource}', '${work.workName || 'video'}')">
-                                             <i class="fas fa-download"></i> Download Video
-                                         </button>
-                                         <br><small>Duration: ${Math.round(work.resource.duration / 1000)}s | Size: ${work.resource.width}x${work.resource.height}</small>
-                                         ${work.cover && work.cover.resource ? `<br><small>Cover: <a href="${work.cover.resource}" target="_blank">View Cover</a></small>` : ''}
-                                     `;
-                                     
-                                     // Show download all button if we have completed videos
-                                     checkAndShowDownloadAll();
-                                 }
-                                                         } else if (work.status === 5 || work.status === 2) { // Processing
-                                 console.log(`=== PROCESSING TASK ${result.videoTask.taskId} ===`);
-                                 console.log(`Processing task ${result.videoTask.taskId}:`, {
-                                     etaTime: history.etaTime,
-                                     currentTimestamp: history.currentTimestamp,
-                                     etaTimeMs: history.etaTime ? history.etaTime - history.currentTimestamp : 0
-                                 });
-                                 
-                                 // Calculate ETA time from API response
-                                 const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
-                                 const etaTimeMinutes = Math.round(etaTimeMs / 60000); // Convert to minutes
-                                 
-                                 // Show ETA time from API response
-                                 let etaText = etaTimeMinutes > 0 ? `${etaTimeMinutes} phút còn lại` : 'Calculating...';
-                                 
-                                 console.log(`ETA text for task ${result.videoTask.taskId}:`, etaText);
-                                 
-                                 // Update time estimate element
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = etaText;
-                                     console.log(`Updated time estimate for task ${result.videoTask.taskId}`);
-                                 }
-                                                         } else if (work.status === 1) { // Queued
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = 'Waiting in queue...';
-                                 }
-                                                                                      } else if (work.status === 4 || work.status === 10) { // Failed
-                                 const errorMsg = work.errorDetail || 'Task failed';
-                                 completedTasks.add(result.videoTask.taskId);
-                                 
-                                 // Show error message in time estimate element
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = `Failed: ${errorMsg}`;
-                                 }
-                                 
-                                 // Show ETA time even for failed tasks if available
-                                 const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
-                                 const etaTimeMinutes = Math.round(etaTimeMs / 60000); // Convert to minutes
-                                 const etaText = etaTimeMs > 0 
-                                     ? `${etaTimeMinutes} phút còn lại (trước khi lỗi)`
-                                     : 'Task failed';
-                                 
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = etaText;
-                                 }
-                                                         } else if (work.status === 3) { // Completed (alternative status)
-                                 completedTasks.add(result.videoTask.taskId);
-                                 
-                                 // Show completion message in time estimate element
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = 'Completed';
-                                 }
-                                 
-                                 // Add video URL if available and has real MP4 link
-                                 if (work.resource && work.resource.resource && work.resource.resource.trim() !== "" && downloadElement) {
-                                     downloadElement.style.display = 'block';
-                                     downloadElement.innerHTML = `
-                                         <button class="download-btn" onclick="downloadVideo('${work.resource.resource}', '${work.workName || 'video'}')">
-                                             <i class="fas fa-download"></i> Download Video
-                                         </button>
-                                         <br><small>Duration: ${Math.round(work.resource.duration / 1000)}s | Size: ${work.resource.width}x${work.resource.height}</small>
-                                         ${work.cover && work.cover.resource ? `<br><small>Cover: <a href="${work.cover.resource}" target="_blank">View Cover</a></small>` : ''}
-                                     `;
-                                     
-                                     // Show download all button if we have completed videos
-                                     checkAndShowDownloadAll();
-                                 }
-                                                         } else {
-                                 // Handle any other status codes
-                                 const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
-                                 const etaTimeMinutes = Math.round(etaTimeMs / 60000); // Convert to minutes
-                                 
-                                 let etaText = 'Calculating...';
-                                 
-                                 if (work.status === 10) {
-                                     etaText = `Failed: ${work.errorDetail || 'Task failed'}`;
-                                     completedTasks.add(result.videoTask.taskId);
-                                 } else if (etaTimeMs > 0) {
-                                     etaText = `${etaTimeMinutes} phút còn lại`;
-                                 }
-                                 
-                                 // Always show ETA time from API response
-                                 if (timeEstimateElement) {
-                                     timeEstimateElement.textContent = etaText;
-                                 }
-                             }
-                        }
-                    }
-                }
-            });
         }
 
         function showNotification(message, type = 'info') {
