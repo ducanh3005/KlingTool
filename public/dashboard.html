@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KlingTool Dashboard - Batch Processing</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #ffffff;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+        
+        .upload-section {
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid #404040;
+        }
+        
+        .upload-area {
+            border: 3px dashed #555;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+            background: #1f1f1f;
+        }
+        
+        .upload-area:hover {
+            border-color: #888;
+            background-color: #252525;
+        }
+        
+        .upload-area.dragover {
+            border-color: #888;
+            background-color: #2a2a2a;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #888;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            font-size: 0.9rem;
+            color: #999;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #444 0%, #666 100%);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-section {
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            border: 1px solid #404040;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .progress-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+        
+        .progress-stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px 20px;
+            background: #1f1f1f;
+            border-radius: 10px;
+            min-width: 80px;
+            border: 1px solid #404040;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #888;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #1f1f1f;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid #404040;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #555 0%, #777 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-size: 1rem;
+            color: #ccc;
+        }
+        
+        .results-section {
+            background: #2a2a2a;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            border: 1px solid #404040;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .results-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+        
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-card {
+            border: 1px solid #404040;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            background: #1f1f1f;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            border-color: #555;
+        }
+        
+        .result-card.success {
+            border-left: 4px solid #28a745;
+        }
+        
+        .result-card.failed {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.success {
+            background: #1e4d2b;
+            color: #4ade80;
+        }
+        
+        .status-badge.failed {
+            background: #4d1e1e;
+            color: #f87171;
+        }
+        
+        .prompt-text {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        
+        .image-preview {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .video-task-info {
+            background: #252525;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid #404040;
+        }
+        
+        .task-id {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #888;
+            word-break: break-all;
+        }
+        
+        .task-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-top: 5px;
+        }
+        
+        .task-status.processing {
+            background: #4d3e1e;
+            color: #fbbf24;
+        }
+        
+        .task-status.completed {
+            background: #1e4d2b;
+            color: #4ade80;
+        }
+        
+        .task-status.failed {
+            background: #4d1e1e;
+            color: #f87171;
+        }
+        
+        .task-status.queued {
+            background: #2d3748;
+            color: #a0aec0;
+        }
+        
+        .video-url {
+            margin-top: 10px;
+            padding: 8px;
+            background: #1e4d2b;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            word-break: break-all;
+            border: 1px solid #2d5a3a;
+        }
+        
+        .video-url a {
+            color: #4ade80;
+            text-decoration: none;
+        }
+        
+        .video-url a:hover {
+            text-decoration: underline;
+        }
+        
+        .download-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 5px 5px 5px 0;
+            transition: background 0.3s;
+        }
+        
+        .download-btn:hover {
+            background: #218838;
+        }
+        
+        .download-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .download-all-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: background 0.3s;
+        }
+        
+        .download-all-btn:hover {
+            background: #0056b3;
+        }
+        
+        .download-all-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+                 .eta-time {
+             font-size: 0.9rem;
+             color: #ccc;
+             margin: 5px 0;
+             font-style: italic;
+         }
+         
+         .video-download {
+             margin-top: 10px;
+             padding: 10px;
+             background: #1e4d2b;
+             border-radius: 8px;
+             border: 1px solid #2d5a3a;
+         }
+         
+         .time-estimate {
+             font-size: 0.9rem;
+             color: #ccc;
+             margin: 5px 0;
+             font-style: italic;
+         }
+         
+         .download {
+             margin-top: 10px;
+             padding: 10px;
+             background: #1e4d2b;
+             border-radius: 8px;
+             border: 1px solid #2d5a3a;
+         }
+        
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #888;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .error-message {
+            color: #f87171;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #555;
+            border-top: 3px solid #888;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: #28a745;
+        }
+        
+        .notification.error {
+            background: #dc3545;
+        }
+        
+        .notification.info {
+            background: #17a2b8;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .progress-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-magic"></i> KlingTool Dashboard</h1>
+            <p>Batch Image Upload & Video Generation</p>
+        </div>
+        
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Drop your CSV file here or click to browse</div>
+                <div class="upload-hint">Supports CSV files with 'prompt' and 'image' columns</div>
+                <input type="file" id="fileInput" class="file-input" accept=".csv">
+            </div>
+            <button class="upload-btn" id="uploadBtn"><i class="fas fa-upload"></i> Upload & Process</button>
+        </div>
+        
+        <div class="progress-section" id="progressSection">
+            <div class="progress-header">
+                <div class="progress-title">
+                    <i class="fas fa-cogs"></i> Processing Progress
+                </div>
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="successCount">0</div>
+                        <div class="stat-label">Success</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="failedCount">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Ready to process</div>
+        </div>
+        
+        <div style="margin: 20px 0; text-align: center;">
+            <button onclick="refreshTaskStatuses()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                🔄 Force Refresh Status
+            </button>
+            <span id="refreshStatus" style="margin-left: 10px; color: #666;"></span>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-title">
+                    <i class="fas fa-list"></i> Processing Results
+                </div>
+                <button class="export-btn" id="exportBtn">
+                    <i class="fas fa-download"></i> Export Results
+                </button>
+            </div>
+            
+            <div class="auto-refresh-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoRefreshToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span>Auto-refresh status (3s)</span>
+            </div>
+            
+            <button class="download-all-btn" id="downloadAllBtn" style="display: none;">
+                <i class="fas fa-download"></i> Download All Videos
+            </button>
+            
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+    
+    <div id="notificationContainer"></div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressSection = document.getElementById('progressSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const totalCount = document.getElementById('totalCount');
+        const successCount = document.getElementById('successCount');
+        const failedCount = document.getElementById('failedCount');
+        const exportBtn = document.getElementById('exportBtn');
+        const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        
+        let selectedFile = null;
+        let processingResults = [];
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+        let completedTasks = new Set();
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                showNotification('Please select a CSV file', 'error');
+                return;
+            }
+            selectedFile = file;
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = `<i class="fas fa-upload"></i> Upload ${file.name}`;
+            showNotification(`File selected: ${file.name}`, 'info');
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<div class="loading-spinner"></div> Processing...';
+            progressSection.style.display = 'block';
+            resultsSection.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/upload-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    processingResults = result.data;
+                    updateProgress(result);
+                    displayResults(result.data);
+                    showNotification(`Processing completed! ${result.successful} successful, ${result.failed} failed`, 'success');
+                } else {
+                    showNotification(`Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showNotification(`Network error: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = `<i class="fas fa-upload"></i> Upload & Process`;
+            }
+        });
+
+        function updateProgress(result) {
+            const total = result.total;
+            const successful = result.successful;
+            const failed = result.failed;
+            const progress = total > 0 ? ((successful + failed) / total) * 100 : 0;
+            
+            totalCount.textContent = total;
+            successCount.textContent = successful;
+            failedCount.textContent = failed;
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `Processed ${successful + failed} of ${total} items`;
+        }
+
+        function displayResults(results) {
+            resultsGrid.innerHTML = '';
+            resultsSection.style.display = 'block';
+            
+            results.forEach((result, index) => {
+                const card = document.createElement('div');
+                card.className = `result-card ${result.status}`;
+                
+                const statusBadge = result.status === 'success' 
+                    ? '<span class="status-badge success">✓ Success</span>' 
+                    : '<span class="status-badge failed">✗ Failed</span>';
+                
+                const imagePreview = result.klingImageUrl 
+                    ? `<img src="${result.klingImageUrl}" alt="Uploaded image" class="image-preview" onerror="this.style.display='none'">`
+                    : '<div class="image-preview" style="background: #1f1f1f; display: flex; align-items: center; justify-content: center; color: #999; border: 1px solid #404040;">No Image</div>';
+                
+                                 const videoTaskInfo = result.videoTask 
+                     ? `
+                         <div class="video-task-info">
+                             <div><strong>🎬 Video Task ID:</strong></div>
+                             <div class="task-id">${result.videoTask.taskId}</div>
+                             <div class="time-estimate">Calculating...</div>
+                             <div class="download" style="display: none;"></div>
+                         </div>
+                     `
+                     : '';
+                
+                const errorMessage = result.error 
+                    ? `<div class="error-message">${result.error}</div>` 
+                    : '';
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <strong>Item ${index + 1}</strong>
+                        ${statusBadge}
+                    </div>
+                    <div class="prompt-text">"${result.prompt}"</div>
+                    ${imagePreview}
+                    ${videoTaskInfo}
+                    ${errorMessage}
+                `;
+                
+                resultsGrid.appendChild(card);
+            });
+            
+            // Start auto-refresh if enabled
+            if (isAutoRefreshEnabled) {
+                startAutoRefresh();
+            }
+        }
+
+        exportBtn.addEventListener('click', () => {
+            if (processingResults.length === 0) return;
+            
+            const csvContent = generateCSV(processingResults);
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'klingtool_results.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+
+        function generateCSV(results) {
+            const headers = ['Index', 'Status', 'Prompt', 'Original Image', 'Kling Image URL', 'Video Task ID', 'Error'];
+            const rows = results.map((result, index) => [
+                index + 1,
+                result.status,
+                result.prompt,
+                result.originalImage,
+                result.klingImageUrl || '',
+                result.videoTask ? result.videoTask.taskId : '',
+                result.error || ''
+            ]);
+            
+            return [headers, ...rows].map(row => 
+                row.map(cell => `"${cell}"`).join(',')
+            ).join('\n');
+        }
+
+        // Auto-refresh functionality
+        autoRefreshToggle.addEventListener('change', (e) => {
+            isAutoRefreshEnabled = e.target.checked;
+            if (isAutoRefreshEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(refreshTaskStatuses, 3000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        async function refreshTaskStatuses() {
+            if (!isAutoRefreshEnabled || processingResults.length === 0) return;
+            
+            const tasksToCheck = processingResults.filter(result => 
+                result.videoTask && result.videoTask.taskId && result.status === 'success' && 
+                !completedTasks.has(result.videoTask.taskId)
+            );
+            
+            if (tasksToCheck.length === 0) {
+                stopAutoRefresh();
+                return;
+            }
+            
+            for (const result of tasksToCheck) {
+                try {
+                    const response = await fetch(`/api/video-task/${result.videoTask.taskId}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.data) {
+                        console.log(`Task ${result.videoTask.taskId} response:`, JSON.stringify(data.data, null, 2));
+                        updateTaskStatus(result, data.data);
+                    } else {
+                        console.log(`Task ${result.videoTask.taskId} failed response:`, data);
+                    }
+                } catch (error) {
+                    console.error(`Error checking task ${result.videoTask.taskId}:`, error);
+                }
+            }
+        }
+
+        function updateTaskStatus(result, statusData) {
+            console.log(`=== UPDATING TASK ${result.videoTask.taskId} ===`);
+            
+            // Find the card with matching task ID
+            const cards = document.querySelectorAll('.result-card');
+            let targetCard = null;
+            
+            cards.forEach(card => {
+                const taskIdElement = card.querySelector('.task-id');
+                if (taskIdElement && taskIdElement.textContent.trim() === result.videoTask.taskId) {
+                    targetCard = card;
+                }
+            });
+            
+            if (!targetCard) {
+                console.log(`No card found for task ${result.videoTask.taskId}`);
+                return;
+            }
+            
+            console.log(`Found card for task ${result.videoTask.taskId}`);
+            
+            // Get elements
+            const timeEstimateElement = targetCard.querySelector('.time-estimate');
+            const downloadElement = targetCard.querySelector('.download');
+            
+            if (!timeEstimateElement || !downloadElement) {
+                console.log('Missing required elements in card');
+                return;
+            }
+            
+            // Parse status data
+            if (!statusData.data || statusData.data.length === 0) {
+                console.log('No status data available');
+                return;
+            }
+            
+            const history = statusData.data[0];
+            const work = history.works && history.works[0];
+            
+            if (!work) {
+                console.log('No work data available');
+                return;
+            }
+            
+            console.log(`Status: ${work.status}, etaTime: ${history.etaTime}`);
+            
+            // Calculate ETA time
+            const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
+            const etaMinutes = Math.round(etaTimeMs / 60000);
+            
+            // Update UI based on status
+            if (work.status === 99 || work.status === 3) {
+                // Completed
+                timeEstimateElement.textContent = 'Completed';
+                
+                // Show download if video available
+                if (work.resource && work.resource.resource && work.resource.resource.trim() !== '') {
+                    downloadElement.style.display = 'block';
+                    downloadElement.innerHTML = `
+                        <button onclick="downloadVideo('${work.resource.resource}', '${work.workName || 'video'}')" 
+                                style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            📥 Download Video
+                        </button>
+                        <small style="display: block; margin-top: 5px; color: #666;">
+                            Duration: ${Math.round(work.resource.duration / 1000)}s
+                        </small>
+                    `;
+                }
+                completedTasks.add(result.videoTask.taskId);
+                
+            } else if (work.status === 10 || work.status === 4) {
+                // Failed
+                const errorMsg = work.errorDetail || 'Task failed';
+                if (etaMinutes > 0) {
+                    timeEstimateElement.textContent = `${etaMinutes} phút còn lại (task failed)`;
+                } else {
+                    timeEstimateElement.textContent = `Failed: ${errorMsg}`;
+                }
+                completedTasks.add(result.videoTask.taskId);
+                
+            } else if (work.status === 1) {
+                // Queued
+                timeEstimateElement.textContent = 'Waiting in queue...';
+                
+            } else {
+                // Processing (status 2, 5, etc.)
+                if (etaMinutes > 0) {
+                    timeEstimateElement.textContent = `${etaMinutes} phút còn lại`;
+                } else {
+                    timeEstimateElement.textContent = 'Processing...';
+                }
+            }
+        }
+
+        function updateTaskStatus_OLD(result, statusData) {
+             console.log(`=== UPDATING TASK STATUS FOR ${result.videoTask.taskId} ===`);
+             console.log(`Status data:`, statusData);
+             console.log(`Works data:`, statusData.data && statusData.data.length > 0 ? statusData.data[0].works : 'No works data');
+             const cards = document.querySelectorAll('.result-card');
+             console.log(`Found ${cards.length} cards`);
+            
+            cards.forEach(card => {
+                const taskIdElement = card.querySelector('.task-id');
+                console.log(`Card task ID: ${taskIdElement ? taskIdElement.textContent : 'not found'}, looking for: ${result.videoTask.taskId}`);
+                if (taskIdElement && taskIdElement.textContent === result.videoTask.taskId.toString()) {
+                    console.log(`Found matching card for task ${result.videoTask.taskId}`);
+                                                              const videoTaskInfo = card.querySelector('.video-task-info');
+                     const timeEstimateElement = videoTaskInfo ? videoTaskInfo.querySelector('.time-estimate') : null;
+                     const downloadElement = videoTaskInfo ? videoTaskInfo.querySelector('.download') : null;
+                     
+                     console.log(`Card elements found:`, {
+                         videoTaskInfo: !!videoTaskInfo,
+                         timeEstimateElement: !!timeEstimateElement,
+                         downloadElement: !!downloadElement
+                     });
+                     
+                     if (!videoTaskInfo) {
+                         console.error('video-task-info not found in card');
+                         return;
+                     }
+                    
+                    if (statusData.data && statusData.data.length > 0) {
+                        const history = statusData.data[0];
+                        console.log(`History data:`, history);
+                        if (history.works && history.works.length > 0) {
+                            const work = history.works[0];
+                            console.log(`Work status: ${work.status}, resource: ${work.resource ? work.resource.resource : 'no resource'}`);
+                            
+                                                         // Check if task has error
+                             if (work.errorDetail) {
+                                 completedTasks.add(result.videoTask.taskId);
+                                 
+                                 // Show error message in time estimate element
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = `Failed: ${work.errorDetail}`;
+                                 }
+                                 return;
+                             }
+                            
+                                                         if (work.status === 99) { // Completed
+                                 completedTasks.add(result.videoTask.taskId);
+                                 
+                                 // Show completion message in time estimate element
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = 'Completed';
+                                 }
+                                 
+                                 // Add video URL if available and has real MP4 link
+                                 if (work.resource && work.resource.resource && work.resource.resource.trim() !== "" && downloadElement) {
+                                     downloadElement.style.display = 'block';
+                                     downloadElement.innerHTML = `
+                                         <button class="download-btn" onclick="downloadVideo('${work.resource.resource}', '${work.workName || 'video'}')">
+                                             <i class="fas fa-download"></i> Download Video
+                                         </button>
+                                         <br><small>Duration: ${Math.round(work.resource.duration / 1000)}s | Size: ${work.resource.width}x${work.resource.height}</small>
+                                         ${work.cover && work.cover.resource ? `<br><small>Cover: <a href="${work.cover.resource}" target="_blank">View Cover</a></small>` : ''}
+                                     `;
+                                     
+                                     // Show download all button if we have completed videos
+                                     checkAndShowDownloadAll();
+                                 }
+                                                         } else if (work.status === 5 || work.status === 2) { // Processing
+                                 console.log(`=== PROCESSING TASK ${result.videoTask.taskId} ===`);
+                                 console.log(`Processing task ${result.videoTask.taskId}:`, {
+                                     etaTime: history.etaTime,
+                                     currentTimestamp: history.currentTimestamp,
+                                     etaTimeMs: history.etaTime ? history.etaTime - history.currentTimestamp : 0
+                                 });
+                                 
+                                 // Calculate ETA time from API response
+                                 const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
+                                 const etaTimeMinutes = Math.round(etaTimeMs / 60000); // Convert to minutes
+                                 
+                                 // Show ETA time from API response
+                                 let etaText = etaTimeMinutes > 0 ? `${etaTimeMinutes} phút còn lại` : 'Calculating...';
+                                 
+                                 console.log(`ETA text for task ${result.videoTask.taskId}:`, etaText);
+                                 
+                                 // Update time estimate element
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = etaText;
+                                     console.log(`Updated time estimate for task ${result.videoTask.taskId}`);
+                                 }
+                                                         } else if (work.status === 1) { // Queued
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = 'Waiting in queue...';
+                                 }
+                                                                                      } else if (work.status === 4 || work.status === 10) { // Failed
+                                 const errorMsg = work.errorDetail || 'Task failed';
+                                 completedTasks.add(result.videoTask.taskId);
+                                 
+                                 // Show error message in time estimate element
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = `Failed: ${errorMsg}`;
+                                 }
+                                 
+                                 // Show ETA time even for failed tasks if available
+                                 const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
+                                 const etaTimeMinutes = Math.round(etaTimeMs / 60000); // Convert to minutes
+                                 const etaText = etaTimeMs > 0 
+                                     ? `${etaTimeMinutes} phút còn lại (trước khi lỗi)`
+                                     : 'Task failed';
+                                 
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = etaText;
+                                 }
+                                                         } else if (work.status === 3) { // Completed (alternative status)
+                                 completedTasks.add(result.videoTask.taskId);
+                                 
+                                 // Show completion message in time estimate element
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = 'Completed';
+                                 }
+                                 
+                                 // Add video URL if available and has real MP4 link
+                                 if (work.resource && work.resource.resource && work.resource.resource.trim() !== "" && downloadElement) {
+                                     downloadElement.style.display = 'block';
+                                     downloadElement.innerHTML = `
+                                         <button class="download-btn" onclick="downloadVideo('${work.resource.resource}', '${work.workName || 'video'}')">
+                                             <i class="fas fa-download"></i> Download Video
+                                         </button>
+                                         <br><small>Duration: ${Math.round(work.resource.duration / 1000)}s | Size: ${work.resource.width}x${work.resource.height}</small>
+                                         ${work.cover && work.cover.resource ? `<br><small>Cover: <a href="${work.cover.resource}" target="_blank">View Cover</a></small>` : ''}
+                                     `;
+                                     
+                                     // Show download all button if we have completed videos
+                                     checkAndShowDownloadAll();
+                                 }
+                                                         } else {
+                                 // Handle any other status codes
+                                 const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
+                                 const etaTimeMinutes = Math.round(etaTimeMs / 60000); // Convert to minutes
+                                 
+                                 let etaText = 'Calculating...';
+                                 
+                                 if (work.status === 10) {
+                                     etaText = `Failed: ${work.errorDetail || 'Task failed'}`;
+                                     completedTasks.add(result.videoTask.taskId);
+                                 } else if (etaTimeMs > 0) {
+                                     etaText = `${etaTimeMinutes} phút còn lại`;
+                                 }
+                                 
+                                 // Always show ETA time from API response
+                                 if (timeEstimateElement) {
+                                     timeEstimateElement.textContent = etaText;
+                                 }
+                             }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            document.getElementById('notificationContainer').appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Download functionality
+        function downloadVideo(videoUrl, filename) {
+            const a = document.createElement('a');
+            a.href = videoUrl;
+            a.download = `${filename}.mp4`;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showNotification('Download started!', 'success');
+        }
+
+        function checkAndShowDownloadAll() {
+            const completedVideos = document.querySelectorAll('.video-url');
+            if (completedVideos.length > 0) {
+                downloadAllBtn.style.display = 'inline-block';
+            }
+        }
+
+        function downloadAllVideos() {
+            const videoUrls = document.querySelectorAll('.video-url a[href*=".mp4"]');
+            if (videoUrls.length === 0) {
+                showNotification('No videos available for download', 'error');
+                return;
+            }
+            
+            videoUrls.forEach((link, index) => {
+                setTimeout(() => {
+                    const videoUrl = link.href;
+                    const filename = `video_${index + 1}`;
+                    downloadVideo(videoUrl, filename);
+                }, index * 1000); // Download with 1 second delay between each
+            });
+            
+            showNotification(`Starting download of ${videoUrls.length} videos`, 'success');
+        }
+
+        // Add event listener for download all button
+        downloadAllBtn.addEventListener('click', downloadAllVideos);
+    </script>
+</body>
+</html> 

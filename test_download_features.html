@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Download Features</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .test-card {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .download-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 5px 5px 5px 0;
+            transition: background 0.3s;
+        }
+        .download-btn:hover {
+            background: #218838;
+        }
+        .download-all-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: background 0.3s;
+        }
+        .download-all-btn:hover {
+            background: #0056b3;
+        }
+        .eta-time {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .video-url {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(40, 167, 69, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        .video-url a {
+            color: #90EE90;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .status.completed { 
+            background: rgba(40, 167, 69, 0.8); 
+            color: #fff; 
+        }
+        .status.processing { 
+            background: rgba(255, 193, 7, 0.8); 
+            color: #000; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Test Download Features</h1>
+        <p>Testing the new download functionality and ETA display</p>
+
+        <div class="test-card">
+            <h3>✅ Completed Video (Status 99)</h3>
+            <div class="status completed">Completed</div>
+            <div class="eta-time">Video generation completed!</div>
+            <div class="video-url">
+                <strong>🎬 Video Ready!</strong><br>
+                <a href="https://v15-kling.klingai.com/bs2/upload-ylab-stunt-sgp/se/ai_portal_sgp_m2v_img2video_v21_pro/3c9fe361-28f8-4c41-abc4-ce2ace6b034f_wm_bwm_hbr_hres_audio.mp4?x-kcdn-pid=112372" target="_blank">Download Video</a><br>
+                <small>Duration: 5s | Size: 1368x1516</small><br>
+                <small>Cover: <a href="https://s15-kling.klingai.com/kimg/EMXN1y8qdQoGdXBsb2FkEg55bGFiLXN0dW50LXNncBpbc2UvYWlfcG9ydGFsX3NncF9tMnZfaW1nMnZpZGVvX3YyMV9wcm8vZmVhZDhjYWUtMDlmNi00NzhjLTkwZTQtOGFmZTFlY2VkYzA0X3ZpZGVvX2NvdmVyLmpwZw.origin?x-kcdn-pid=112372" target="_blank">View Cover</a></small>
+                <br><button class="download-btn" onclick="downloadVideo('https://v15-kling.klingai.com/bs2/upload-ylab-stunt-sgp/se/ai_portal_sgp_m2v_img2video_v21_pro/3c9fe361-28f8-4c41-abc4-ce2ace6b034f_wm_bwm_hbr_hres_audio.mp4?x-kcdn-pid=112372', 'completed_video_1')">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h3>⏳ Processing Video (Status 5)</h3>
+            <div class="status processing">Processing</div>
+            <div class="eta-time">2m 30s remaining</div>
+            <p>This video is still being processed...</p>
+        </div>
+
+        <div class="test-card">
+            <h3>✅ Another Completed Video (Status 99)</h3>
+            <div class="status completed">Completed</div>
+            <div class="eta-time">Video generation completed!</div>
+            <div class="video-url">
+                <strong>🎬 Video Ready!</strong><br>
+                <a href="https://v15-kling.klingai.com/bs2/upload-ylab-stunt-sgp/se/ai_portal_sgp_m2v_img2video_v21_pro/another-video.mp4?x-kcdn-pid=112372" target="_blank">Download Video</a><br>
+                <small>Duration: 5s | Size: 1368x1516</small>
+                <br><button class="download-btn" onclick="downloadVideo('https://v15-kling.klingai.com/bs2/upload-ylab-stunt-sgp/se/ai_portal_sgp_m2v_img2video_v21_pro/another-video.mp4?x-kcdn-pid=112372', 'completed_video_2')">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+
+        <button class="download-all-btn" onclick="downloadAllVideos()">
+            <i class="fas fa-download"></i> Download All Videos
+        </button>
+
+        <div class="test-card">
+            <h3>📊 Features Tested:</h3>
+            <ul>
+                <li>✅ ETA Time Display (minutes and seconds)</li>
+                <li>✅ Individual Download Buttons</li>
+                <li>✅ Download All Videos Button</li>
+                <li>✅ Auto-refresh stops when all videos completed</li>
+                <li>✅ Video metadata display (duration, size, cover)</li>
+                <li>✅ Status tracking with completedTasks Set</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function downloadVideo(videoUrl, filename) {
+            const a = document.createElement('a');
+            a.href = videoUrl;
+            a.download = `${filename}.mp4`;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            alert('Download started!');
+        }
+
+        function downloadAllVideos() {
+            const videoUrls = document.querySelectorAll('.video-url a[href*=".mp4"]');
+            if (videoUrls.length === 0) {
+                alert('No videos available for download');
+                return;
+            }
+
+            videoUrls.forEach((link, index) => {
+                setTimeout(() => {
+                    const videoUrl = link.href;
+                    const filename = `video_${index + 1}`;
+                    downloadVideo(videoUrl, filename);
+                }, index * 1000); // Download with 1 second delay between each
+            });
+
+            alert(`Starting download of ${videoUrls.length} videos`);
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Processing Task Auto-Refresh</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .status-card {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .task-id {
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+            margin: 10px 0;
+            color: #fff;
+        }
+        .status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .status.processing { 
+            background: rgba(255, 193, 7, 0.8); 
+            color: #000; 
+            animation: pulse 2s infinite;
+        }
+        .status.completed { 
+            background: rgba(40, 167, 69, 0.8); 
+            color: #fff; 
+        }
+        .status.failed { 
+            background: rgba(220, 53, 69, 0.8); 
+            color: #fff; 
+        }
+        .status.queued { 
+            background: rgba(108, 117, 125, 0.8); 
+            color: #fff; 
+        }
+        .video-url {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(40, 167, 69, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        .video-url a {
+            color: #90EE90;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .video-url a:hover {
+            text-decoration: underline;
+        }
+        .auto-refresh-toggle {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: .4s;
+            border-radius: 30px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        .eta-time {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .last-update {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Video Task Status Monitor</h1>
+        <p>Real-time monitoring of video generation tasks with auto-refresh every 3 seconds</p>
+        
+        <div class="auto-refresh-toggle">
+            <label class="toggle-switch">
+                <input type="checkbox" id="autoRefreshToggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span>Auto-refresh status (3s)</span>
+        </div>
+
+        <div class="status-card">
+            <h3>🎥 Video Generation Task</h3>
+            <div class="task-id">Task ID: 286507929305777</div>
+            <div class="status" id="taskStatus">Processing</div>
+            <div class="eta-time" id="etaTime"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="videoUrl"></div>
+            <div class="last-update" id="lastUpdate">Last update: Never</div>
+        </div>
+
+        <div class="status-card">
+            <h3>📊 Status Legend</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <div><span class="status processing">Processing</span> - Task is being processed</div>
+                <div><span class="status queued">Queued</span> - Task is waiting in queue</div>
+                <div><span class="status completed">Completed</span> - Video is ready</div>
+                <div><span class="status failed">Failed</span> - Task failed</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+        const taskStatus = document.getElementById('taskStatus');
+        const videoUrl = document.getElementById('videoUrl');
+        const lastUpdate = document.getElementById('lastUpdate');
+        const etaTime = document.getElementById('etaTime');
+        const progressFill = document.getElementById('progressFill');
+        
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+        let startTime = null;
+
+        autoRefreshToggle.addEventListener('change', (e) => {
+            isAutoRefreshEnabled = e.target.checked;
+            if (isAutoRefreshEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(checkTaskStatus, 3000);
+            checkTaskStatus(); // Check immediately
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        async function checkTaskStatus() {
+            try {
+                const response = await fetch('/api/video-task/286507929305777');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    updateTaskStatus(data.data);
+                }
+            } catch (error) {
+                console.error('Error checking task status:', error);
+                taskStatus.textContent = 'Error checking status';
+                taskStatus.className = 'status failed';
+            }
+        }
+
+        function updateTaskStatus(statusData) {
+            lastUpdate.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+            
+            if (statusData.data && statusData.data.length > 0) {
+                const history = statusData.data[0];
+                if (history.works && history.works.length > 0) {
+                    const work = history.works[0];
+                    
+                    // Check if task has error
+                    if (work.errorDetail) {
+                        taskStatus.textContent = `Failed: ${work.errorDetail}`;
+                        taskStatus.className = 'status failed';
+                        videoUrl.innerHTML = '';
+                        etaTime.textContent = '';
+                        progressFill.style.width = '0%';
+                        return;
+                    }
+                    
+                    if (work.status === 99) { // Completed
+                        taskStatus.textContent = 'Completed';
+                        taskStatus.className = 'status completed';
+                        progressFill.style.width = '100%';
+                        etaTime.textContent = 'Video generation completed!';
+                        
+                        if (work.resource && work.resource.resource) {
+                            videoUrl.innerHTML = `
+                                <div class="video-url">
+                                    <strong>🎬 Video Ready!</strong><br>
+                                    <a href="${work.resource.resource}" target="_blank">Download Video</a><br>
+                                    <small>Duration: ${Math.round(work.resource.duration / 1000)}s | Size: ${work.resource.width}x${work.resource.height}</small>
+                                    ${work.cover && work.cover.resource ? `<br><small>Cover: <a href="${work.cover.resource}" target="_blank">View Cover</a></small>` : ''}
+                                </div>
+                            `;
+                        }
+                    } else if (work.status === 5 || work.status === 2) { // Processing
+                        const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
+                        const etaTimeSeconds = Math.round(etaTimeMs / 1000);
+                        
+                        if (etaTimeMs > 0) {
+                            const etaText = etaTimeSeconds > 60 ? 
+                                `${Math.floor(etaTimeSeconds / 60)}m ${etaTimeSeconds % 60}s remaining` : 
+                                `${etaTimeSeconds}s remaining`;
+                            etaTime.textContent = etaText;
+                            
+                            // Calculate progress (assuming 5 minutes total time)
+                            const totalTime = 5 * 60 * 1000; // 5 minutes in ms
+                            const elapsedTime = totalTime - etaTimeMs;
+                            const progress = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100));
+                            progressFill.style.width = `${progress}%`;
+                        } else {
+                            etaTime.textContent = 'Processing...';
+                            progressFill.style.width = '50%';
+                        }
+                        
+                        taskStatus.textContent = 'Processing';
+                        taskStatus.className = 'status processing';
+                        videoUrl.innerHTML = '';
+                    } else if (work.status === 1) { // Queued
+                        taskStatus.textContent = 'Queued';
+                        taskStatus.className = 'status queued';
+                        etaTime.textContent = 'Waiting in queue...';
+                        progressFill.style.width = '10%';
+                        videoUrl.innerHTML = '';
+                    } else if (work.status === 4 || work.status === 10) { // Failed
+                        const errorMsg = work.errorDetail || 'Task failed';
+                        taskStatus.textContent = `Failed: ${errorMsg}`;
+                        taskStatus.className = 'status failed';
+                        etaTime.textContent = 'Task failed';
+                        progressFill.style.width = '0%';
+                        videoUrl.innerHTML = '';
+                    } else if (work.status === 3) { // Completed (alternative status)
+                        taskStatus.textContent = 'Completed';
+                        taskStatus.className = 'status completed';
+                        progressFill.style.width = '100%';
+                        etaTime.textContent = 'Video generation completed!';
+                        
+                        if (work.resource && work.resource.resource) {
+                            videoUrl.innerHTML = `
+                                <div class="video-url">
+                                    <strong>🎬 Video Ready!</strong><br>
+                                    <a href="${work.resource.resource}" target="_blank">Download Video</a><br>
+                                    <small>Duration: ${Math.round(work.resource.duration / 1000)}s | Size: ${work.resource.width}x${work.resource.height}</small>
+                                    ${work.cover && work.cover.resource ? `<br><small>Cover: <a href="${work.cover.resource}" target="_blank">View Cover</a></small>` : ''}
+                                </div>
+                            `;
+                        }
+                    } else {
+                        const etaTimeMs = history.etaTime ? Math.max(0, history.etaTime - history.currentTimestamp) : 0;
+                        const etaTimeSeconds = Math.round(etaTimeMs / 1000);
+                        const etaText = etaTimeMs > 0 ? 
+                            `${Math.floor(etaTimeSeconds / 60)}m ${etaTimeSeconds % 60}s remaining` : 
+                            'Processing...';
+                        etaTime.textContent = etaText;
+                        
+                        taskStatus.textContent = `Status ${work.status}`;
+                        taskStatus.className = 'status processing';
+                        progressFill.style.width = '30%';
+                        videoUrl.innerHTML = '';
+                    }
+                }
+            }
+        }
+
+        // Start auto-refresh on page load
+        if (isAutoRefreshEnabled) {
+            startAutoRefresh();
+        }
+    </script>
+</body>
+</html> 
