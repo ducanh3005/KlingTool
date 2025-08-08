@@ -206,6 +206,12 @@
             margin-bottom: 20px;
         }
         
+        .results-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
         .results-title {
             font-size: 1.5rem;
             font-weight: 600;
@@ -225,6 +231,28 @@
         .export-btn:hover {
             background: #218838;
             transform: translateY(-1px);
+        }
+        
+        .download-all-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .download-all-btn:hover:not(:disabled) {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .download-all-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .results-grid {
@@ -614,9 +642,14 @@
                 <div class="results-title">
                     <i class="fas fa-list"></i> Processing Results
                 </div>
-                <button class="export-btn" id="exportBtn">
-                    <i class="fas fa-download"></i> Export Results
-                </button>
+                <div class="results-actions">
+                    <button class="download-all-btn" id="downloadAllBtn" style="display: none;">
+                        <i class="fas fa-download"></i> Download All Videos
+                    </button>
+                    <button class="export-btn" id="exportBtn">
+                        <i class="fas fa-download"></i> Export Results
+                    </button>
+                </div>
             </div>
             
             <div class="auto-refresh-toggle">
@@ -626,10 +659,6 @@
                 </label>
                 <span>Auto-refresh status (3s)</span>
             </div>
-            
-            <button class="download-all-btn" id="downloadAllBtn" style="display: none;">
-                <i class="fas fa-download"></i> Download All Videos
-            </button>
             
             <div class="results-grid" id="resultsGrid"></div>
         </div>
@@ -797,6 +826,9 @@
             if (isAutoRefreshEnabled) {
                 startAutoRefresh();
             }
+            
+            // Check if we should show download all button
+            checkAndShowDownloadAll();
         }
 
         exportBtn.addEventListener('click', () => {
@@ -938,10 +970,13 @@
                 
                 // Update download button - show if resource exists
                 if (works && works.resource && works.resource.resource) {
-                    downloadElement.innerHTML = `<a href="${works.resource.resource}" target="_blank" class="download-btn">Download MP4</a>`;
+                    downloadElement.innerHTML = `<a href="${works.resource.resource}" class="download-btn">Download MP4</a>`;
                     downloadElement.style.display = 'block';
                     timeEstimateElement.textContent = 'Completed ✓';
                     timeEstimateElement.style.color = '#28a745';
+                    
+                    // Check if we should show download all button
+                    checkAndShowDownloadAll();
                 } else {
                     downloadElement.style.display = 'none';
                 }
@@ -972,39 +1007,71 @@
 
         // Download functionality
         function downloadVideo(videoUrl, filename) {
+            // Create a temporary link element
             const a = document.createElement('a');
             a.href = videoUrl;
             a.download = `${filename}.mp4`;
-            a.target = '_blank';
+            a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            showNotification('Download started!', 'success');
         }
 
         function checkAndShowDownloadAll() {
-            const completedVideos = document.querySelectorAll('.video-url');
+            const completedVideos = document.querySelectorAll('.download-btn');
             if (completedVideos.length > 0) {
                 downloadAllBtn.style.display = 'inline-block';
+            } else {
+                downloadAllBtn.style.display = 'none';
             }
         }
 
-        function downloadAllVideos() {
-            const videoUrls = document.querySelectorAll('.video-url a[href*=".mp4"]');
-            if (videoUrls.length === 0) {
+        async function downloadAllVideos() {
+            const downloadButtons = document.querySelectorAll('.download-btn');
+            if (downloadButtons.length === 0) {
                 showNotification('No videos available for download', 'error');
                 return;
             }
             
-            videoUrls.forEach((link, index) => {
-                setTimeout(() => {
-                    const videoUrl = link.href;
-                    const filename = `video_${index + 1}`;
-                    downloadVideo(videoUrl, filename);
-                }, index * 1000); // Download with 1 second delay between each
-            });
+            // Disable button during download
+            downloadAllBtn.disabled = true;
+            downloadAllBtn.innerHTML = '<div class="loading-spinner"></div> Downloading...';
             
-            showNotification(`Starting download of ${videoUrls.length} videos`, 'success');
+            try {
+                const totalVideos = downloadButtons.length;
+                let downloadedCount = 0;
+                
+                showNotification(`Starting download of ${totalVideos} videos...`, 'info');
+                
+                for (let i = 0; i < downloadButtons.length; i++) {
+                    const link = downloadButtons[i];
+                    const videoUrl = link.href;
+                    const prompt = link.closest('.result-card')?.querySelector('.prompt')?.textContent || `video_${i + 1}`;
+                    const filename = prompt.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) + `_${i + 1}`;
+                    
+                    // Download video
+                    downloadVideo(videoUrl, filename);
+                    downloadedCount++;
+                    
+                    // Update progress
+                    downloadAllBtn.innerHTML = `<div class="loading-spinner"></div> Downloading ${downloadedCount}/${totalVideos}`;
+                    
+                    // Wait 1 second before next download to avoid browser blocking
+                    if (i < downloadButtons.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+                
+                showNotification(`Successfully downloaded ${totalVideos} videos!`, 'success');
+                
+            } catch (error) {
+                console.error('Error downloading videos:', error);
+                showNotification('Error downloading videos', 'error');
+            } finally {
+                // Re-enable button
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.innerHTML = '<i class="fas fa-download"></i> Download All Videos';
+            }
         }
 
         // Add event listener for download all button
