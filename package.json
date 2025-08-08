@@ -21,8 +21,5 @@
   },
   "keywords": ["kling", "ai", "tool"],
   "author": "Your Name",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "license": "MIT"
 }
