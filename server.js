@@ -857,8 +857,15 @@ app.get('/api/test', (req, res) => {
     res.json({
         success: true,
         message: 'Server is working!',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV,
+        port: process.env.PORT
     });
+});
+
+// Simple test route
+app.get('/test', (req, res) => {
+    res.send('Hello from Kling Tool Server!');
 });
 
 // Test Kling API connectivity
