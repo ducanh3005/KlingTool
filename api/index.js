@@ -828,5 +828,69 @@ app.post('/api/debug-upload', async (req, res) => {
     }
 });
 
+// Check video task status API
+app.get('/api/video-task/:taskId', async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        
+        if (!taskId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Task ID is required'
+            });
+        }
+
+        // Use dynamic cookies if available, otherwise fallback to hardcoded ones
+        const cookiesToUse = currentCookies || 'did=web_1e1a96daaa302169a55f1f415e26e17a6df4; __risk_web_device_id=2619671d1740996067504651; KLING_LAST_ACCESS_REGION=global; _gcl_au=1.1.468414764.1754324670; _ga=GA1.1.719912853.1754324670; _clck=defdxu%7C2%7Cfy8%7C0%7C2042; userId=37904718; ksi18n.ai.portal_st=ChNrc2kxOG4uYWkucG9ydGFsLnN0EqABRlIQ9jqcURvoiHC6eIvmJqezdb_OmkVaJZ93FTnVXa_xUZjEPgdDhimA1qnZKxa-ENepmOQcK_sAxFAMqksGKXHg5h7HoQ9K3LOPh8JMlxzU8ZVjbqlnXZUIqbz5srgEcHwH8_dej-BLW0j1hgZl4xL-ado-qs8lsCF9Y8N_2tzU0gfO5T89qjpC4yelzfkeB8RsDfHHoYz8y7YRLwT-wxoS9ZUz3tcFLaUcdMJflnP7ahvOIiCFFASSbhc4crxwFEWhILW6WiWulEBW7gqB7lmUpPBCfigFMAE; ksi18n.ai.portal_ph=5a1d61e4637892da9e734f3478588035a168; _clsk=1dvx8am%7C1754452791039%7C3%7C1%7Cj.clarity.ms%2Fcollect; _uetsid=97169d40726c11f0825ced3e20476fab; _uetvid=d1939eb0b6c611efb5d48b5053d95a86; _ga_MWG30LDQKZ=GS2.1.s1754499900$o6$g1$t1754499923$j37$l0$h572507615; ak_bmsc=C624D6818F65F5FE8286677D4FEE6803~000000000000000000000000000000~YAAQT6s3F+tW+3iYAQAAi0ZYgBw46Ujfti3bZiVL+uHGu8Z5/8mk3CfqTUoc9GYnJoc4BaP/sG7oJsswdstpUIGHBYqhrcmD/5JIRZ+0ZnwA+t/BmJeIKRSwaoGpzAT2CM2lla8iD63teE9AiYii5hMpBHvOqvywxYpr80wd5sJl7XjHtsj8TydTZ7TYfI5vUWoc5TYgB53fRHQvMFB9f1zDPjrgDdoSW4hM3sDNwG63HaoSib4G/i5L64ms+EVmoTDSxZHk2of79zfgzhlP8QYM0Aef+wNJhdGfK0yiy4wg4mwSmXT/WG4iVaeUyy94qLe3a35+NPZTAz87AuISsK39QtHqIX0XM4rqSm+bswxr0pacxePJvHAL+xNYoRSFFhV2hShUvvapQxhY4DTuT5N4; bm_sv=2911014728270099EDE3909E51EC559A~YAAQT6s3FwdX+3iYAQAARFVYgBxn2hX70IJ7sCUiQpN2pzJSxF9wKgl4RArtVkGiVDaYbIuJzK6FDiaCk3xGac0lA53AgzWQfMuNz7T+wiQEM6VzH5BuEt67sMUiWfq/Ccl3IROUERRIV+sqfcu2cp20XhXHuvEat+y5nU2xFwMkHbnE4Yngd3uRpatHQUcViK94yXGP2CLGkonb5unxSgBVgC6Za21jrQm7emx2QuGOzpGS42jXB79LHosyZuSiaQ==~1';
+        
+        console.log(`Checking status for video task: ${taskId}`);
+        
+        // Use the new API endpoint for checking task status
+        const statusResponse = await axios.get(`https://api-app-global.klingai.com/api/user/works/personal/feeds`, {
+            params: {
+                __NS_hxfalcon: 'HUDR_sFnX-FFuAW5VsfDNK0XOP6snthhLcvIxjxBz8_r61UvYFIc7AGaHwcmlb_Lw36QFxBn0Bj4EKN4Zb24e3VuXscYogNIA2VgtPQO2gCi43de2oR63LL1hZW0okM8dUmYrH6VQSB7Y7ZSTIxoF0X7LUSWUr1pXnbkf6P4o8SqzzdFR6IIMKBvrgRoI4U6ivRMLenA12ccSYtqthj98PYKQiYknD1oZrTCqdIYEmeA9-IuKDb4BYMfFM-MucEeNCEqAxDTqGvp2l2yBnI1dPXhcb8ALexSfjrMThA63z04WXT8QydCeK4DY-9Ot16rLKD2TyqGUQehcBaHRADTnYXMRvwPwfoqemre0RYp-v8MxO863TNOkvgQ8CzC00yZUokllTsCpQ8Vbp9IxETkk-sSoZn-kx-jt2r2r9O3E2a6GMNA1fa0UKFhD3yPCv1vFZ-fozcJoiaWhxYRkEndun9W2qIA30CyFhRP2tqWMt-q_DhLBvJgj4OcqKH6D4RKgjeQPMc3sVZyCdTcl_lqE-S2gIWlcz7ZAZpyIynEXWpiMFc4kkmFzSoNTHUWPKziCgKtqoS6WKid0FhHymNVR-r1eWGZ-GNkg4SpR7JEhPTWSGRbBQrnRZI0slaexL-K_LA6oArX1SZ5UOG6AFSUSMqfMcuV1dQx_IyXTtPeoSONioGJFuewOeBDX5uuUznwE56xBHf1dK2QM4CLZM7WbLqy5_RkOTEeLpD2-KRU.$HE_031c84e1e3239bcdcad049b8d949bdd0be494848484969d0e4f20e923faa00cd8402d049d31e7692331e76a048',
+                caver: '2',
+                pageSize: '1',
+                contentType: '',
+                favored: 'false',
+                taskId: taskId,
+                extra: 'BASE_WORK'
+            },
+            headers: {
+                'accept': 'application/json, text/plain, */*',
+                'accept-language': 'en',
+                'cache-control': 'no-cache',
+                'origin': 'https://app.klingai.com',
+                'pragma': 'no-cache',
+                'priority': 'u=1, i',
+                'referer': 'https://app.klingai.com/',
+                'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"macOS"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
+                'time-zone': 'Asia/Saigon',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                'Cookie': cookiesToUse
+            },
+            timeout: 30000
+        });
+        
+        console.log('Task status response:', JSON.stringify(statusResponse.data, null, 2));
+        
+        res.json({
+            success: true,
+            data: statusResponse.data
+        });
+    } catch (error) {
+        console.error('Check video task status error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Export for Vercel
 module.exports = app; 
