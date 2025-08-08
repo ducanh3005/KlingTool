@@ -619,5 +619,102 @@ app.get('/api/cookies-status', (req, res) => {
     });
 });
 
+// Kling update cookies API
+app.post('/api/kling/update-cookies', (req, res) => {
+    try {
+        const { cookies } = req.body;
+        if (!cookies) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cookies are required'
+            });
+        }
+        
+        currentCookies = cookies;
+        console.log('✅ Cookies updated successfully');
+        
+        res.json({
+            success: true,
+            message: 'Cookies updated successfully',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update cookies',
+            error: error.message
+        });
+    }
+});
+
+// Kling cookies status API
+app.get('/api/kling/cookies-status', (req, res) => {
+    res.json({
+        success: true,
+        hasCookies: !!currentCookies,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Test upload single image with current cookies
+app.post('/api/test-upload', async (req, res) => {
+    try {
+        const { imageUrl } = req.body;
+        
+        if (!imageUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'Image URL is required'
+            });
+        }
+        
+        console.log('Testing upload with image:', imageUrl);
+        
+        // Test only the token generation part
+        const timestamp = Date.now();
+        const filename = `test_${timestamp}.jpg`;
+        
+        const cookiesToUse = currentCookies || 'did=web_1e1a96daaa302169a55f1f415e26e17a6df4; userId=37904718;';
+        
+        const tokenResponse = await axios.get('https://api-app-global.klingai.com/api/upload/issue/token', {
+            params: { filename },
+            headers: {
+                'accept': 'application/json, text/plain, */*',
+                'accept-language': 'en',
+                'cache-control': 'no-cache',
+                'origin': 'https://app.klingai.com',
+                'pragma': 'no-cache',
+                'priority': 'u=1, i',
+                'referer': 'https://app.klingai.com/',
+                'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"macOS"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
+                'time-zone': 'Asia/Saigon',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                'Cookie': cookiesToUse
+            }
+        });
+        
+        res.json({
+            success: true,
+            message: 'Token generation successful',
+            token: tokenResponse.data.data.token,
+            httpEndpoints: tokenResponse.data.data.httpEndpoints,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Upload test error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Upload test failed',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Export for Vercel
 module.exports = app; 
