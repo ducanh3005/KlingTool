@@ -227,7 +227,8 @@ async function uploadImageToKling(imageUrl, prompt = null) {
                 'sec-fetch-mode': 'cors',
                 'sec-fetch-site': 'same-site',
                 'time-zone': 'Asia/Saigon',
-                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0'
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                'Cookie': cookiesToUse
             }
         });
         
@@ -711,6 +712,117 @@ app.post('/api/test-upload', async (req, res) => {
             success: false,
             message: 'Upload test failed',
             error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Debug endpoint to test full upload process step by step
+app.post('/api/debug-upload', async (req, res) => {
+    try {
+        const { imageUrl } = req.body;
+        
+        if (!imageUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'Image URL is required'
+            });
+        }
+        
+        console.log('Debug upload with image:', imageUrl);
+        
+        // Step 1: Get token
+        const timestamp = Date.now();
+        const filename = `debug_${timestamp}.jpg`;
+        const cookiesToUse = currentCookies || 'did=web_1e1a96daaa302169a55f1f415e26e17a6df4; userId=37904718;';
+        
+        console.log('Step 1: Getting token...');
+        const tokenResponse = await axios.get('https://api-app-global.klingai.com/api/upload/issue/token', {
+            params: { filename },
+            headers: {
+                'accept': 'application/json, text/plain, */*',
+                'accept-language': 'en',
+                'cache-control': 'no-cache',
+                'origin': 'https://app.klingai.com',
+                'pragma': 'no-cache',
+                'priority': 'u=1, i',
+                'referer': 'https://app.klingai.com/',
+                'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"macOS"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
+                'time-zone': 'Asia/Saigon',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                'Cookie': cookiesToUse
+            }
+        });
+        
+        const token = tokenResponse.data.data.token;
+        const httpEndpoints = tokenResponse.data.data.httpEndpoints;
+        console.log('✅ Token obtained:', token.substring(0, 50) + '...');
+        
+        // Step 2: Download image
+        console.log('Step 2: Downloading image...');
+        const tempImagePath = `/tmp/debug_${timestamp}.jpg`;
+        const imageResponse = await axios.get(imageUrl, {
+            responseType: 'arraybuffer'
+        });
+        fs.writeFileSync(tempImagePath, imageResponse.data);
+        console.log('✅ Image downloaded to:', tempImagePath);
+        
+        // Step 3: Test verify token (this is where 401 usually happens)
+        console.log('Step 3: Testing verify token...');
+        try {
+            const verifyResponse = await axios.get('https://api-app-global.klingai.com/api/upload/verify/token', {
+                params: { token },
+                headers: {
+                    'accept': 'application/json, text/plain, */*',
+                    'accept-language': 'en',
+                    'cache-control': 'no-cache',
+                    'origin': 'https://app.klingai.com',
+                    'pragma': 'no-cache',
+                    'priority': 'u=1, i',
+                    'referer': 'https://app.klingai.com/',
+                    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"macOS"',
+                    'sec-fetch-dest': 'empty',
+                    'sec-fetch-mode': 'cors',
+                    'sec-fetch-site': 'same-site',
+                    'time-zone': 'Asia/Saigon',
+                    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                    'Cookie': cookiesToUse
+                }
+            });
+            console.log('✅ Verify successful:', verifyResponse.data);
+        } catch (verifyError) {
+            console.log('❌ Verify failed:', verifyError.response?.status, verifyError.response?.data);
+            throw verifyError;
+        }
+        
+        // Clean up
+        if (fs.existsSync(tempImagePath)) {
+            fs.unlinkSync(tempImagePath);
+        }
+        
+        res.json({
+            success: true,
+            message: 'Debug upload completed successfully',
+            token: token.substring(0, 50) + '...',
+            httpEndpoints: httpEndpoints,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Debug upload error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Debug upload failed',
+            error: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
             timestamp: new Date().toISOString()
         });
     }
