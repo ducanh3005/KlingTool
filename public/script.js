@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setLoadingState(true);
 
         try {
-            const response = await fetch('/api/kling/login', {
+            const response = await fetch(`${window.API_CONFIG.apiBaseUrl}/api/kling/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Redirect to dashboard after successful login
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = `${window.API_CONFIG.apiBaseUrl}/dashboard`;
                 }, 1500);
             } else {
                 showMessage(errorMessage, data.error || 'Login failed. Please try again.', true);

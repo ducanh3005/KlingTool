@@ -1,21 +1,18 @@
 // Configuration for different environments
-const CONFIG = {
-    // Development (localhost)
+const config = {
+    // For local development
     development: {
-        API_BASE_URL: 'http://localhost:3000',
-        KLING_API_URL: 'https://api.klingai.com'
+        apiBaseUrl: 'http://localhost:3000'
     },
-    
-    // Production - Update this with your actual backend URL
+    // For production (replace with your deployed backend URL)
     production: {
-        API_BASE_URL: 'https://your-backend-domain.com', // Change this!
-        KLING_API_URL: 'https://api.klingai.com'
+        apiBaseUrl: 'https://your-backend-url.vercel.app' // Replace with your actual backend URL
     }
 };
 
-// Auto-detect environment
+// Get current environment
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const currentConfig = isDevelopment ? CONFIG.development : CONFIG.production;
+const currentConfig = isDevelopment ? config.development : config.production;
 
-// Export for use in other files
-window.APP_CONFIG = currentConfig; 
+// Export configuration
+window.API_CONFIG = currentConfig; 

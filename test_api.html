@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Kling Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Kling Tool API Test</h1>
+        <p>This page helps you test the API endpoints to debug issues.</p>
+
+        <div class="test-section">
+            <h3>1. Test Basic Connectivity</h3>
+            <button onclick="testBasicConnectivity()">Test /api/test</button>
+            <div id="basicResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Login Endpoint</h3>
+            <label for="testEmail">Email:</label>
+            <input type="email" id="testEmail" value="test@example.com" placeholder="Enter test email">
+            
+            <label for="testPassword">Password:</label>
+            <input type="password" id="testPassword" value="testpassword" placeholder="Enter test password">
+            
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test with Your Credentials</h3>
+            <label for="realEmail">Your Email:</label>
+            <input type="email" id="realEmail" placeholder="Enter your email">
+            
+            <label for="realPassword">Your Password:</label>
+            <input type="password" id="realPassword" placeholder="Enter your password">
+            
+            <button onclick="testRealLogin()">Test Real Login</button>
+            <div id="realLoginResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test OPTIONS Request</h3>
+            <button onclick="testOptions()">Test OPTIONS</button>
+            <div id="optionsResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://kling-tool.vercel.app';
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.style.display = 'block';
+        }
+
+        async function testBasicConnectivity() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/test`);
+                const data = await response.json();
+                showResult('basicResult', data);
+            } catch (error) {
+                showResult('basicResult', { error: error.message }, true);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/kling/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                showResult('loginResult', data, !response.ok);
+            } catch (error) {
+                showResult('loginResult', { error: error.message }, true);
+            }
+        }
+
+        async function testRealLogin() {
+            const email = document.getElementById('realEmail').value;
+            const password = document.getElementById('realPassword').value;
+
+            if (!email || !password) {
+                showResult('realLoginResult', { error: 'Please enter both email and password' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/kling/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                showResult('realLoginResult', data, !response.ok);
+            } catch (error) {
+                showResult('realLoginResult', { error: error.message }, true);
+            }
+        }
+
+        async function testOptions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/kling/login`, {
+                    method: 'OPTIONS'
+                });
+                
+                const data = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+                showResult('optionsResult', data, !response.ok);
+            } catch (error) {
+                showResult('optionsResult', { error: error.message }, true);
+            }
+        }
+    </script>
+</body>
+</html> 
