@@ -970,7 +970,7 @@
                 
                 // Update download button - show if resource exists
                 if (works && works.resource && works.resource.resource) {
-                    downloadElement.innerHTML = `<a href="${works.resource.resource}" class="download-btn">Download MP4</a>`;
+                    downloadElement.innerHTML = `<a href="${works.resource.resource}" target="_blank" class="download-btn">Download MP4</a>`;
                     downloadElement.style.display = 'block';
                     timeEstimateElement.textContent = 'Completed ✓';
                     timeEstimateElement.style.color = '#28a745';
@@ -1007,14 +1007,8 @@
 
         // Download functionality
         function downloadVideo(videoUrl, filename) {
-            // Create a temporary link element
-            const a = document.createElement('a');
-            a.href = videoUrl;
-            a.download = `${filename}.mp4`;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            // Open video in new tab
+            window.open(videoUrl, '_blank');
         }
 
         function checkAndShowDownloadAll() {
@@ -1035,38 +1029,36 @@
             
             // Disable button during download
             downloadAllBtn.disabled = true;
-            downloadAllBtn.innerHTML = '<div class="loading-spinner"></div> Downloading...';
+            downloadAllBtn.innerHTML = '<div class="loading-spinner"></div> Opening...';
             
             try {
                 const totalVideos = downloadButtons.length;
-                let downloadedCount = 0;
+                let openedCount = 0;
                 
-                showNotification(`Starting download of ${totalVideos} videos...`, 'info');
+                showNotification(`Opening ${totalVideos} videos in new tabs...`, 'info');
                 
                 for (let i = 0; i < downloadButtons.length; i++) {
                     const link = downloadButtons[i];
                     const videoUrl = link.href;
-                    const prompt = link.closest('.result-card')?.querySelector('.prompt')?.textContent || `video_${i + 1}`;
-                    const filename = prompt.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) + `_${i + 1}`;
                     
-                    // Download video
-                    downloadVideo(videoUrl, filename);
-                    downloadedCount++;
+                    // Open video in new tab
+                    downloadVideo(videoUrl);
+                    openedCount++;
                     
                     // Update progress
-                    downloadAllBtn.innerHTML = `<div class="loading-spinner"></div> Downloading ${downloadedCount}/${totalVideos}`;
+                    downloadAllBtn.innerHTML = `<div class="loading-spinner"></div> Opening ${openedCount}/${totalVideos}`;
                     
-                    // Wait 1 second before next download to avoid browser blocking
+                    // Wait 500ms before next tab to avoid browser blocking
                     if (i < downloadButtons.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
                 }
                 
-                showNotification(`Successfully downloaded ${totalVideos} videos!`, 'success');
+                showNotification(`Opened ${totalVideos} videos in new tabs!`, 'success');
                 
             } catch (error) {
-                console.error('Error downloading videos:', error);
-                showNotification('Error downloading videos', 'error');
+                console.error('Error opening videos:', error);
+                showNotification('Error opening videos', 'error');
             } finally {
                 // Re-enable button
                 downloadAllBtn.disabled = false;
