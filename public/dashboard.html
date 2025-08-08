@@ -637,7 +637,11 @@
     
     <div id="notificationContainer"></div>
 
+    <script src="config.js"></script>
     <script>
+        // Use configuration from config.js
+        const API_BASE_URL = window.APP_CONFIG.API_BASE_URL;
+        
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
@@ -711,7 +715,7 @@
             resultsSection.style.display = 'none';
             
             try {
-                const response = await fetch('/api/upload-csv', {
+                const response = await fetch(`${API_BASE_URL}/api/upload-csv`, {
                     method: 'POST',
                     body: formData
                 });
@@ -868,7 +872,7 @@
             
             for (const result of tasksToCheck) {
                 try {
-                    const response = await fetch(`/api/video-task/${result.videoTask.taskId}`);
+                    const response = await fetch(`${API_BASE_URL}/api/video-task/${result.videoTask.taskId}`);
                     const data = await response.json();
                     
                     if (data.success && data.data) {
