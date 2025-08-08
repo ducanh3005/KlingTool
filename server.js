@@ -4,16 +4,15 @@ const axios = require('axios');
 const path = require('path');
 const multer = require('multer');
 const csv = require('csv-parser');
-const fs = require('fs');
 const FormData = require('form-data');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure multer for file uploads
+// Configure multer for file uploads (memory storage for Vercel)
 const upload = multer({
-    dest: 'uploads/',
+    storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
         // Accept CSV files with various MIME types
         if (file.mimetype === 'text/csv' || 
@@ -107,7 +106,7 @@ app.post('/api/kling/login', async (req, res) => {
     }
 });
 
-// Upload CSV/Excel file and parse data
+// Upload CSV/Excel file and parse data (modified for Vercel)
 app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -118,84 +117,75 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
         }
 
         const results = [];
-        const filePath = req.file.path;
+        const fileBuffer = req.file.buffer;
 
-        // Parse CSV file
-        fs.createReadStream(filePath)
-            .pipe(csv({
-                trim: true,
-                skipEmptyLines: true
-            }))
-            .on('data', (data) => {
-                console.log('CSV row data:', data); // Debug log
-                if (data.prompt && data.image) {
+        // Parse CSV file from buffer
+        const csvString = fileBuffer.toString('utf-8');
+        const lines = csvString.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                
+                if (row.prompt && row.image) {
                     results.push({
-                        prompt: data.prompt.trim(),
-                        image: data.image.trim()
+                        prompt: row.prompt.trim(),
+                        image: row.image.trim()
                     });
                 }
-            })
-            .on('end', async () => {
-                // Clean up uploaded file
-                fs.unlinkSync(filePath);
+            }
+        }
 
-                // Process each row to upload images
-                const processedData = [];
-                
-                for (let i = 0; i < results.length; i++) {
-                    const row = results[i];
-                    console.log(`Processing item ${i + 1}/${results.length}: ${row.image}`);
-                    
-                    try {
-                        const uploadResult = await uploadImageToKling(row.image, row.prompt);
-                        processedData.push({
-                            prompt: row.prompt,
-                            originalImage: row.image,
-                            klingImageUrl: uploadResult.klingUrl, // Use actual Kling URL
-                            videoTask: uploadResult.videoTask, // Video generation task info
-                            status: 'success',
-                            uploadInfo: uploadResult
-                        });
-                        console.log(`✅ Success ${i + 1}/${results.length}: ${uploadResult.klingUrl}`);
-                        console.log(`🎬 Video Task ID: ${uploadResult.videoTask.taskId}`);
-                    } catch (error) {
-                        console.error(`❌ Error ${i + 1}/${results.length}:`, error.message);
-                        processedData.push({
-                            prompt: row.prompt,
-                            originalImage: row.image,
-                            klingImageUrl: null,
-                            videoTask: null,
-                            status: 'failed',
-                            error: error.message
-                        });
-                    }
-                    
-                    // Add delay between requests to avoid rate limiting
-                    if (i < results.length - 1) {
-                        console.log('Waiting 5 seconds before next upload...');
-                        await new Promise(resolve => setTimeout(resolve, 5000));
-                    }
-                }
+        // Process each row to upload images
+        const processedData = [];
+        
+        for (let i = 0; i < results.length; i++) {
+            const row = results[i];
+            console.log(`Processing item ${i + 1}/${results.length}: ${row.image}`);
+            
+            try {
+                const uploadResult = await uploadImageToKling(row.image, row.prompt);
+                processedData.push({
+                    prompt: row.prompt,
+                    originalImage: row.image,
+                    klingImageUrl: uploadResult.klingUrl,
+                    videoTask: uploadResult.videoTask,
+                    status: 'success',
+                    uploadInfo: uploadResult
+                });
+                console.log(`✅ Success ${i + 1}/${results.length}: ${uploadResult.klingUrl}`);
+                console.log(`🎬 Video Task ID: ${uploadResult.videoTask.taskId}`);
+            } catch (error) {
+                console.error(`❌ Error ${i + 1}/${results.length}:`, error.message);
+                processedData.push({
+                    prompt: row.prompt,
+                    originalImage: row.image,
+                    klingImageUrl: null,
+                    videoTask: null,
+                    status: 'failed',
+                    error: error.message
+                });
+            }
+            
+            // Add delay between requests to avoid rate limiting
+            if (i < results.length - 1) {
+                console.log('Waiting 5 seconds before next upload...');
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
 
-                res.json({
-                    success: true,
-                    data: processedData,
-                    total: results.length,
-                    successful: processedData.filter(item => item.status === 'success').length,
-                    failed: processedData.filter(item => item.status === 'failed').length
-                });
-            })
-            .on('error', (error) => {
-                // Clean up uploaded file
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-                
-                res.status(500).json({
-                    success: false,
-                    error: 'Error parsing CSV file: ' + error.message
-                });
-            });
+        res.json({
+            success: true,
+            data: processedData,
+            total: results.length,
+            successful: processedData.filter(item => item.status === 'success').length,
+            failed: processedData.filter(item => item.status === 'failed').length
+        });
     } catch (error) {
         console.error('Upload CSV error:', error);
         res.status(500).json({
@@ -344,28 +334,18 @@ async function uploadImageToKling(imageUrl, prompt = null) {
     try {
         console.log(`Processing image: ${imageUrl}`);
         
-        // Step 1: Download image to local folder
+        // Step 1: Download image to memory (no file system operations)
         const timestamp = Date.now();
-        const imageFolder = `images/image_${timestamp}`;
-        const imagePath = `${imageFolder}/image.jpg`;
+        const filename = `image_${timestamp}.jpg`;
         
-        // Create folder
-        if (!fs.existsSync(imageFolder)) {
-            fs.mkdirSync(imageFolder, { recursive: true });
-        }
-        
-        // Download image
-        console.log(`Downloading image to: ${imagePath}`);
+        console.log(`Downloading image: ${imageUrl}`);
         const imageResponse = await axios.get(imageUrl, {
             responseType: 'arraybuffer'
         });
         
-        // Save image to local
-        fs.writeFileSync(imagePath, imageResponse.data);
-        console.log(`Image saved to: ${imagePath}`);
+        console.log(`Image downloaded, size: ${imageResponse.data.length} bytes`);
         
         // Step 2: Get upload token from Kling
-        const filename = `image_${timestamp}.jpg`;
         console.log(`Getting upload token for: ${filename}`);
         
         // Use dynamic cookies if available, otherwise fallback to hardcoded ones
@@ -418,7 +398,7 @@ async function uploadImageToKling(imageUrl, prompt = null) {
             try {
                 // Create form data with the downloaded image
                 const formData = new FormData();
-                formData.append('file', fs.createReadStream(imagePath), {
+                formData.append('file', imageResponse.data, {
                     filename: filename,
                     contentType: 'image/jpeg'
                 });
@@ -448,8 +428,8 @@ async function uploadImageToKling(imageUrl, prompt = null) {
         if (endpoint) {
             console.log('Uploading fragment...');
             
-            // Read the image file
-            const imageBuffer = fs.readFileSync(imagePath);
+            // Use the image buffer directly
+            const imageBuffer = imageResponse.data;
             const fileSize = imageBuffer.length;
             
             const fragmentResponse = await axios.post(`https://${endpoint}/api/upload/fragment`, imageBuffer, {
@@ -563,10 +543,7 @@ async function uploadImageToKling(imageUrl, prompt = null) {
         
         console.log('Verify response:', verifyResponse.data);
         
-        // Clean up local file
-        fs.unlinkSync(imagePath);
-        fs.rmdirSync(imageFolder);
-        console.log(`Cleaned up local file: ${imagePath}`);
+        console.log(`Image processing completed for: ${filename}`);
         
         if (verifyResponse.data.data && verifyResponse.data.data.url) {
             const klingUrl = verifyResponse.data.data.url;
