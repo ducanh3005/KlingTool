@@ -719,14 +719,30 @@ app.post('/api/download-no-watermark', async (req, res) => {
         
         console.log('Download response:', JSON.stringify(downloadResponse.data, null, 2));
         
+        // Check for different possible response formats
         if (downloadResponse.data.result === 1 && downloadResponse.data.data && downloadResponse.data.data.downloadUrl) {
             res.json({
                 success: true,
                 downloadUrl: downloadResponse.data.data.downloadUrl,
                 message: 'Video download URL generated successfully'
             });
+        } else if (downloadResponse.data.data && downloadResponse.data.data.downloadUrl) {
+            // Alternative response format
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.downloadUrl,
+                message: 'Video download URL generated successfully'
+            });
+        } else if (downloadResponse.data.downloadUrl) {
+            // Direct download URL in response
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.downloadUrl,
+                message: 'Video download URL generated successfully'
+            });
         } else {
-            throw new Error(`Download failed: ${downloadResponse.data.message || 'Unknown error'}`);
+            console.error('Unexpected response format:', downloadResponse.data);
+            throw new Error(`Download failed: Unexpected response format`);
         }
         
     } catch (error) {
@@ -787,14 +803,30 @@ app.post('/api/download-all-no-watermark', async (req, res) => {
         
         console.log('Batch download response:', JSON.stringify(downloadResponse.data, null, 2));
         
+        // Check for different possible response formats
         if (downloadResponse.data.result === 1 && downloadResponse.data.data && downloadResponse.data.data.downloadUrl) {
             res.json({
                 success: true,
                 downloadUrl: downloadResponse.data.data.downloadUrl,
                 message: `Batch download URL generated for ${workIds.length} videos`
             });
+        } else if (downloadResponse.data.data && downloadResponse.data.data.downloadUrl) {
+            // Alternative response format
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.downloadUrl,
+                message: `Batch download URL generated for ${workIds.length} videos`
+            });
+        } else if (downloadResponse.data.downloadUrl) {
+            // Direct download URL in response
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.downloadUrl,
+                message: `Batch download URL generated for ${workIds.length} videos`
+            });
         } else {
-            throw new Error(`Batch download failed: ${downloadResponse.data.message || 'Unknown error'}`);
+            console.error('Unexpected batch response format:', downloadResponse.data);
+            throw new Error(`Batch download failed: Unexpected response format`);
         }
         
     } catch (error) {
