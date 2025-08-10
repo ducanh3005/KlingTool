@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test No Watermark Download</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .btn-no-watermark {
+            background: #17a2b8;
+        }
+        .btn-no-watermark:hover {
+            background: #138496;
+        }
+        .info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚰 Test No Watermark Download</h1>
+        
+        <div class="info">
+            <h3>📋 Test Description</h3>
+            <p>This page tests the new no watermark download feature. You can download videos without the Kling watermark using the batch_download_v2 API.</p>
+        </div>
+
+        <div class="test-card">
+            <h3>🔄 Test Single Video Download No Watermark</h3>
+            <div class="form-group">
+                <label for="workId">Work ID:</label>
+                <input type="text" id="workId" value="286792743305846" placeholder="Enter work ID">
+            </div>
+            <div class="form-group">
+                <label for="filename">Filename:</label>
+                <input type="text" id="filename" value="test_video" placeholder="Enter filename">
+            </div>
+            <button onclick="testSingleNoWatermark()" class="btn-no-watermark">Download Single No Watermark</button>
+        </div>
+
+        <div class="test-card">
+            <h3>📦 Test Batch Download No Watermark</h3>
+            <div class="form-group">
+                <label for="workIds">Work IDs (comma separated):</label>
+                <input type="text" id="workIds" value="286792743305846,286792743305847" placeholder="Enter work IDs separated by commas">
+            </div>
+            <button onclick="testBatchNoWatermark()" class="btn-no-watermark">Download Batch No Watermark</button>
+        </div>
+
+        <div class="test-card">
+            <h3>📊 Test Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="info success">
+            <h3>✅ How to Test</h3>
+            <ol>
+                <li>Enter a valid work ID from a completed video</li>
+                <li>Click "Download Single No Watermark" to test single download</li>
+                <li>Enter multiple work IDs to test batch download</li>
+                <li>Check that download starts without watermark</li>
+                <li>Verify that downloaded file has "_no_watermark" suffix</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>🔧 API Endpoints</h3>
+            <p><strong>Single Download:</strong> POST /api/download-no-watermark</p>
+            <p><strong>Batch Download:</strong> POST /api/download-all-no-watermark</p>
+            <p><strong>Parameters:</strong> workId (single) or workIds array (batch)</p>
+        </div>
+    </div>
+
+    <script>
+        async function testSingleNoWatermark() {
+            const workId = document.getElementById('workId').value;
+            const filename = document.getElementById('filename').value;
+            
+            if (!workId) {
+                alert('Please enter a work ID');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">🔄 Downloading video without watermark...</div>';
+            
+            try {
+                const response = await fetch('/api/download-no-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        workId: workId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="result success">
+✅ Single download without watermark successful!
+
+📋 Details:
+- Work ID: ${workId}
+- Filename: ${filename}_no_watermark.mp4
+- Download URL: ${data.downloadUrl}
+- Message: ${data.message}
+
+🎬 Download should start automatically...
+                        </div>
+                    `;
+                    
+                    // Trigger download
+                    const a = document.createElement('a');
+                    a.href = data.downloadUrl;
+                    a.download = `${filename}_no_watermark.mp4`;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Error: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testBatchNoWatermark() {
+            const workIdsInput = document.getElementById('workIds').value;
+            
+            if (!workIdsInput) {
+                alert('Please enter work IDs');
+                return;
+            }
+            
+            const workIds = workIdsInput.split(',').map(id => id.trim()).filter(id => id);
+            
+            if (workIds.length === 0) {
+                alert('Please enter valid work IDs');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">🔄 Downloading batch videos without watermark...</div>';
+            
+            try {
+                const response = await fetch('/api/download-all-no-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        workIds: workIds
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="result success">
+✅ Batch download without watermark successful!
+
+📋 Details:
+- Work IDs: ${workIds.join(', ')}
+- Total videos: ${workIds.length}
+- Download URL: ${data.downloadUrl}
+- Message: ${data.message}
+
+🎬 Batch download should start automatically...
+                        </div>
+                    `;
+                    
+                    // Trigger download
+                    const a = document.createElement('a');
+                    a.href = data.downloadUrl;
+                    a.download = `videos_no_watermark_${Date.now()}.zip`;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Error: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -68,6 +68,14 @@ app.get('/test-download', (req, res) => {
     res.sendFile(path.join(__dirname, 'test_download_features.html'));
 });
 
+app.get('/test-duration-feature', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test_duration_feature.html'));
+});
+
+app.get('/test-no-watermark', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test_no_watermark.html'));
+});
+
 // Kling Login API
 app.post('/api/kling/login', async (req, res) => {
     try {
@@ -655,6 +663,142 @@ app.post('/api/generate-video', async (req, res) => {
         });
     } catch (error) {
         console.error('Video generation error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Download video without watermark API
+app.post('/api/download-no-watermark', async (req, res) => {
+    try {
+        const { workId } = req.body;
+        
+        if (!workId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Work ID is required'
+            });
+        }
+
+        // Use dynamic cookies if available, otherwise fallback to hardcoded ones
+        const cookiesToUse = currentCookies || 'did=web_1e1a96daaa302169a55f1f415e26e17a6df4; __risk_web_device_id=2619671d1740996067504651; KLING_LAST_ACCESS_REGION=global; _gcl_au=1.1.468414764.1754324670; _ga=GA1.1.719912853.1754324670; userId=37904718; ak_bmsc=B1F3FABD3E2D08BABE5E9A92E3A833B6~000000000000000000000000000000~YAAQnyLKF7lQKFuYAQAA5A9KkxzOhNdPHhH+HxV+zoUda9kFTYe29NRJEZize5BfhvplogMo/2Tjmd5WFW4LYNwxMh+VGE/aJOtIDXDfPId9MfiRWFwfE2jP5dEEPSrDEr+gvtfuh4ew/tnWuPKN95FvKR6Yrx4qUuqZrMb3MlsefWJ05hF0N2pzXP6kN4ccHS/R8FyYVm8PyOI+KNw/RcdgbdQZk1Sb+Sdky9kse0FkQeb3I5i4HvAi4QfYS6nxu0AjtUWqjly2PRngXrptGXZoiy0L0lzxkgMQE/NXbORs+1KMblxm47d685VYABUIXBqq4zYBJDLL2FWfl4wC3i3HN66Qqfl0+yEMlHWbZFWRNYYVwQKxdwEcYSE/NLzY4hM=; _clck=defdxu%7C2%7Cfyc%7C0%7C2042; ksi18n.ai.portal_st=ChNrc2kxOG4uYWkucG9ydGFsLnN0EqABf5bzUYkI-WFOriC7ggMGqIljoZTsgdZTUHy4JWwTHISll0s3miFT60oGKb39Sje5v50zziETzPkT4GgV54RcHepSz9h8jSmc7i4vzLUAJ9fEB0wWx4Y6qDkqIObCJjpevjzo5xYehfnN-dqepQ5nm3q9ZUPylTqnsDUDADzZrR3v4yzbyvpseomqcNrb_Qs-gIPX6Czn2DU7YTej-Oj1zhoS44f7wZaNdS6I8jap_n1tO_rJIiBqwQMdieIfVN7rCRPjkpK-LqrdNmiAGcyHBXCZvJQwvSgFMAE; ksi18n.ai.portal_ph=90264b1349731d3cc64f8cfcda2c3f165035; _clsk=1km6lq0%7C1754821311296%7C3%7C1%7Cl.clarity.ms%2Fcollect; _uetsid=8f72de0075d311f0b7ee31fe2c931424; _uetvid=d1939eb0b6c611efb5d48b5053d95a86; _ga_MWG30LDQKZ=GS2.1.s1754821195$o10$g1$t1754821324$j44$l0$h1424991542; bm_sv=11E1D240E943637EEF54596158C38D5C~YAAQnyLKF0l8LluYAQAAzhaDkxyqT+dunwidiEr4roRUW3VhTuxEv461TsAsH/0C9LiCliRQnOW3i77bw9dbhN6+ufx7ho+nT1O9s8MNgvYLjlvldziVUROQ6ZqbTO18migtJFbeJdGUYHSdwcwjNQDkgNAlalZ+6Bg0/7V5aG04eciBF9RhcrmrVTLeUkvxTqnb+zIjNmsXCVerfVVGibjJOWZXiBVq3vk73qR8GSCjEtkrKnNhZtJ08hTMzw8cyJ8=~1';
+        
+        console.log(`Downloading video without watermark for work ID: ${workId}`);
+        
+        const downloadResponse = await axios.get('https://api-app-global.klingai.com/api/works/batch_download_v2', {
+            params: {
+                __NS_hxfalcon: 'HUDR_sFnX-FFuAW5VsfDNK0XOP6snthhLcvIxjxBz8_r61UvYFIc7AGaHwcmlb_Lw36QFxBn0Bj4EKN4Zb24e3VuXsMYqgdcC2VAhO0_LMZjDhJK9nym8Jrx2cnp4iNdoYGECPbgEPyzfyJ_9LRRA2kT4Wi-fsgpPhcwt79cK7Hy9w4ZK644eMCLcihAJ9lm17QsTGX880s53arOchiN1dI7xhoAsBj90hSG_ecp2rus3-ZydGvYbAfbFL-prHTuceGidhzifIed1gmqLk4JRPDwqXNcKYRKeybgdilmszEIERQIjwtqVNtDA47aF16LAIXj67azZT-A1NKHNCXjsPkpVsQzwfszYkr-0RcI2v8MxO4T_T5ntvUhx442y02kbvGNlTrbeJqEPitskMQ4k59ngfBaBx-Hv3LDnvercwKKEJc0zfMk-KFhDnjaW6AKdcOrx3YdgybmhwYctB3cx3crwr4Uw2WXAghbxv6OE8KezDFCFtJ8poastIj3F6RWq0uQMN8zrSNiFcDAs5CeE-S2gXxdUx7ZANM5z63YXDsyPHc4kyDtzSoNTcSmNKDiC8NvwZy6WW1YXdRHy6qY0no9cQzg6HdJn5CEW6ZopOnyQH1WNRreaYcErn-b_IO_2KVz9XrDxSYUKZiiFHmELMOiWdu43ORViYTH-uvqYBut-_GZCuaYQeBDU-6CY2DUlpvk7FZllIS8l1DaBer6aJ66z8QBEP91NpD0vuhYf$HE_c3dc4421239cc5081b1089eaf990473ad58988888889f5102432cf5afe6ab67241d3108913deb652f3deb66088',
+                caver: '2',
+                workIds: workId,
+                fwm: 'false',
+                fileTypes: 'MP4',
+                audioTrack: 'true'
+            },
+            headers: {
+                'accept': 'application/json, text/plain, */*',
+                'accept-language': 'en',
+                'cache-control': 'no-cache',
+                'origin': 'https://app.klingai.com',
+                'pragma': 'no-cache',
+                'priority': 'u=1, i',
+                'referer': 'https://app.klingai.com/',
+                'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"macOS"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
+                'time-zone': 'Asia/Saigon',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                'Cookie': cookiesToUse
+            },
+            timeout: 30000
+        });
+        
+        console.log('Download response:', JSON.stringify(downloadResponse.data, null, 2));
+        
+        if (downloadResponse.data.result === 1 && downloadResponse.data.data && downloadResponse.data.data.downloadUrl) {
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.downloadUrl,
+                message: 'Video download URL generated successfully'
+            });
+        } else {
+            throw new Error(`Download failed: ${downloadResponse.data.message || 'Unknown error'}`);
+        }
+        
+    } catch (error) {
+        console.error('Download without watermark error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Download multiple videos without watermark API
+app.post('/api/download-all-no-watermark', async (req, res) => {
+    try {
+        const { workIds } = req.body;
+        
+        if (!workIds || !Array.isArray(workIds) || workIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Work IDs array is required'
+            });
+        }
+
+        // Use dynamic cookies if available, otherwise fallback to hardcoded ones
+        const cookiesToUse = currentCookies || 'did=web_1e1a96daaa302169a55f1f415e26e17a6df4; __risk_web_device_id=2619671d1740996067504651; KLING_LAST_ACCESS_REGION=global; _gcl_au=1.1.468414764.1754324670; _ga=GA1.1.719912853.1754324670; userId=37904718; ak_bmsc=B1F3FABD3E2D08BABE5E9A92E3A833B6~000000000000000000000000000000~YAAQnyLKF7lQKFuYAQAA5A9KkxzOhNdPHhH+HxV+zoUda9kFTYe29NRJEZize5BfhvplogMo/2Tjmd5WFW4LYNwxMh+VGE/aJOtIDXDfPId9MfiRWFwfE2jP5dEEPSrDEr+gvtfuh4ew/tnWuPKN95FvKR6Yrx4qUuqZrMb3MlsefWJ05hF0N2pzXP6kN4ccHS/R8FyYVm8PyOI+KNw/RcdgbdQZk1Sb+Sdky9kse0FkQeb3I5i4HvAi4QfYS6nxu0AjtUWqjly2PRngXrptGXZoiy0L0lzxkgMQE/NXbORs+1KMblxm47d685VYABUIXBqq4zYBJDLL2FWfl4wC3i3HN66Qqfl0+yEMlHWbZFWRNYYVwQKxdwEcYSE/NLzY4hM=; _clck=defdxu%7C2%7Cfyc%7C0%7C2042; ksi18n.ai.portal_st=ChNrc2kxOG4uYWkucG9ydGFsLnN0EqABf5bzUYkI-WFOriC7ggMGqIljoZTsgdZTUHy4JWwTHISll0s3miFT60oGKb39Sje5v50zziETzPkT4GgV54RcHepSz9h8jSmc7i4vzLUAJ9fEB0wWx4Y6qDkqIObCJjpevjzo5xYehfnN-dqepQ5nm3q9ZUPylTqnsDUDADzZrR3v4yzbyvpseomqcNrb_Qs-gIPX6Czn2DU7YTej-Oj1zhoS44f7wZaNdS6I8jap_n1tO_rJIiBqwQMdieIfVN7rCRPjkpK-LqrdNmiAGcyHBXCZvJQwvSgFMAE; ksi18n.ai.portal_ph=90264b1349731d3cc64f8cfcda2c3f165035; _clsk=1km6lq0%7C1754821311296%7C3%7C1%7Cl.clarity.ms%2Fcollect; _uetsid=8f72de0075d311f0b7ee31fe2c931424; _uetvid=d1939eb0b6c611efb5d48b5053d95a86; _ga_MWG30LDQKZ=GS2.1.s1754821195$o10$g1$t1754821324$j44$l0$h1424991542; bm_sv=11E1D240E943637EEF54596158C38D5C~YAAQnyLKF0l8LluYAQAAzhaDkxyqT+dunwidiEr4roRUW3VhTuxEv461TsAsH/0C9LiCliRQnOW3i77bw9dbhN6+ufx7ho+nT1O9s8MNgvYLjlvldziVUROQ6ZqbTO18migtJFbeJdGUYHSdwcwjNQDkgNAlalZ+6Bg0/7V5aG04eciBF9RhcrmrVTLeUkvxTqnb+zIjNmsXCVerfVVGibjJOWZXiBVq3vk73qR8GSCjEtkrKnNhZtJ08hTMzw8cyJ8=~1';
+        
+        console.log(`Downloading ${workIds.length} videos without watermark`);
+        
+        const downloadResponse = await axios.get('https://api-app-global.klingai.com/api/works/batch_download_v2', {
+            params: {
+                __NS_hxfalcon: 'HUDR_sFnX-FFuAW5VsfDNK0XOP6snthhLcvIxjxBz8_r61UvYFIc7AGaHwcmlb_Lw36QFxBn0Bj4EKN4Zb24e3VuXsMYqgdcC2VAhO0_LMZjDhJK9nym8Jrx2cnp4iNdoYGECPbgEPyzfyJ_9LRRA2kT4Wi-fsgpPhcwt79cK7Hy9w4ZK644eMCLcihAJ9lm17QsTGX880s53arOchiN1dI7xhoAsBj90hSG_ecp2rus3-ZydGvYbAfbFL-prHTuceGidhzifIed1gmqLk4JRPDwqXNcKYRKeybgdilmszEIERQIjwtqVNtDA47aF16LAIXj67azZT-A1NKHNCXjsPkpVsQzwfszYkr-0RcI2v8MxO4T_T5ntvUhx442y02kbvGNlTrbeJqEPitskMQ4k59ngfBaBx-Hv3LDnvercwKKEJc0zfMk-KFhDnjaW6AKdcOrx3YdgybmhwYctB3cx3crwr4Uw2WXAghbxv6OE8KezDFCFtJ8poastIj3F6RWq0uQMN8zrSNiFcDAs5CeE-S2gXxdUx7ZANM5z63YXDsyPHc4kyDtzSoNTcSmNKDiC8NvwZy6WW1YXdRHy6qY0no9cQzg6HdJn5CEW6ZopOnyQH1WNRreaYcErn-b_IO_2KVz9XrDxSYUKZiiFHmELMOiWdu43ORViYTH-uvqYBut-_GZCuaYQeBDU-6CY2DUlpvk7FZllIS8l1DaBer6aJ66z8QBEP91NpD0vuhYf$HE_c3dc4421239cc5081b1089eaf990473ad58988888889f5102432cf5afe6ab67241d3108913deb652f3deb66088',
+                caver: '2',
+                workIds: workIds.join(','),
+                fwm: 'false',
+                fileTypes: 'MP4',
+                audioTrack: 'true'
+            },
+            headers: {
+                'accept': 'application/json, text/plain, */*',
+                'accept-language': 'en',
+                'cache-control': 'no-cache',
+                'origin': 'https://app.klingai.com',
+                'pragma': 'no-cache',
+                'priority': 'u=1, i',
+                'referer': 'https://app.klingai.com/',
+                'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Microsoft Edge";v="138"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"macOS"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
+                'time-zone': 'Asia/Saigon',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+                'Cookie': cookiesToUse
+            },
+            timeout: 30000
+        });
+        
+        console.log('Batch download response:', JSON.stringify(downloadResponse.data, null, 2));
+        
+        if (downloadResponse.data.result === 1 && downloadResponse.data.data && downloadResponse.data.data.downloadUrl) {
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.downloadUrl,
+                message: `Batch download URL generated for ${workIds.length} videos`
+            });
+        } else {
+            throw new Error(`Batch download failed: ${downloadResponse.data.message || 'Unknown error'}`);
+        }
+        
+    } catch (error) {
+        console.error('Batch download without watermark error:', error);
         res.status(500).json({
             success: false,
             error: error.message

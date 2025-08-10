@@ -416,6 +416,15 @@
             text-decoration: none;
         }
         
+        .download-btn.no-watermark {
+            background: #17a2b8;
+            margin-left: 10px;
+        }
+        
+        .download-btn.no-watermark:hover {
+            background: #138496;
+        }
+        
         .download-btn:disabled {
             background: #6c757d;
             cursor: not-allowed;
@@ -436,6 +445,15 @@
         
         .download-all-btn:hover {
             background: #0056b3;
+        }
+        
+        .download-all-btn.no-watermark {
+            background: #17a2b8;
+            margin-left: 10px;
+        }
+        
+        .download-all-btn.no-watermark:hover {
+            background: #138496;
         }
         
         .download-all-btn:disabled {
@@ -653,9 +671,12 @@
                     <i class="fas fa-list"></i> Processing Results
                 </div>
                 <div class="results-actions">
-                    <button class="download-all-btn" id="downloadAllBtn" style="display: none;">
-                        <i class="fas fa-download"></i> Download All Videos
-                    </button>
+                            <button class="download-all-btn" id="downloadAllBtn" style="display: none;">
+            <i class="fas fa-download"></i> Download All Videos
+        </button>
+        <button class="download-all-btn no-watermark" id="downloadAllNoWatermarkBtn" style="display: none;">
+            <i class="fas fa-download"></i> Download All No Watermark
+        </button>
                     <button class="export-btn" id="exportBtn">
                         <i class="fas fa-download"></i> Export Results
                     </button>
@@ -691,6 +712,7 @@
         const exportBtn = document.getElementById('exportBtn');
         const autoRefreshToggle = document.getElementById('autoRefreshToggle');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const downloadAllNoWatermarkBtn = document.getElementById('downloadAllNoWatermarkBtn');
         
         let selectedFile = null;
         let processingResults = [];
@@ -988,8 +1010,12 @@
                     // Find the corresponding result to get download_name
                     const result = processingResults.find(r => r.videoTask && r.videoTask.taskId === taskId);
                     const downloadName = result && result.download_name ? result.download_name : 'video';
+                    const workId = works.id || works.workId;
                     
-                    downloadElement.innerHTML = `<a href="${works.resource.resource}" target="_blank" class="download-btn" data-filename="${downloadName}">Download MP4</a>`;
+                    downloadElement.innerHTML = `
+                        <a href="${works.resource.resource}" target="_blank" class="download-btn" data-filename="${downloadName}">Download MP4</a>
+                        <button class="download-btn no-watermark" data-work-id="${workId}" data-filename="${downloadName}">Download No Watermark</button>
+                    `;
                     downloadElement.style.display = 'block';
                     timeEstimateElement.textContent = 'Completed ✓';
                     timeEstimateElement.style.color = '#28a745';
@@ -1036,12 +1062,51 @@
             document.body.removeChild(a);
         }
 
+        // Download video without watermark
+        async function downloadVideoNoWatermark(workId, filename) {
+            try {
+                showNotification('Generating download link without watermark...', 'info');
+                
+                const response = await fetch('/api/download-no-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        workId: workId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.downloadUrl) {
+                    // Create a temporary link element to trigger download
+                    const a = document.createElement('a');
+                    a.href = data.downloadUrl;
+                    a.download = `${filename}_no_watermark.mp4`;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    showNotification('Download started without watermark!', 'success');
+                } else {
+                    throw new Error(data.error || 'Download failed');
+                }
+            } catch (error) {
+                console.error('Download without watermark error:', error);
+                showNotification('Error downloading without watermark: ' + error.message, 'error');
+            }
+        }
+
         function checkAndShowDownloadAll() {
             const completedVideos = document.querySelectorAll('.download-btn');
             if (completedVideos.length > 0) {
                 downloadAllBtn.style.display = 'inline-block';
+                downloadAllNoWatermarkBtn.style.display = 'inline-block';
             } else {
                 downloadAllBtn.style.display = 'none';
+                downloadAllNoWatermarkBtn.style.display = 'none';
             }
         }
 
@@ -1092,16 +1157,80 @@
             }
         }
 
+        // Download all videos without watermark
+        async function downloadAllVideosNoWatermark() {
+            const noWatermarkButtons = document.querySelectorAll('.download-btn.no-watermark');
+            if (noWatermarkButtons.length === 0) {
+                showNotification('No videos available for download without watermark', 'error');
+                return;
+            }
+            
+            // Disable button during download
+            downloadAllNoWatermarkBtn.disabled = true;
+            downloadAllNoWatermarkBtn.innerHTML = '<div class="loading-spinner"></div> Generating...';
+            
+            try {
+                const workIds = Array.from(noWatermarkButtons).map(btn => btn.getAttribute('data-work-id')).filter(id => id);
+                
+                if (workIds.length === 0) {
+                    throw new Error('No valid work IDs found');
+                }
+                
+                showNotification(`Generating batch download for ${workIds.length} videos without watermark...`, 'info');
+                
+                const response = await fetch('/api/download-all-no-watermark', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        workIds: workIds
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.downloadUrl) {
+                    // Create a temporary link element to trigger download
+                    const a = document.createElement('a');
+                    a.href = data.downloadUrl;
+                    a.download = `videos_no_watermark_${Date.now()}.zip`;
+                    a.target = '_blank';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    showNotification(`Batch download started for ${workIds.length} videos without watermark!`, 'success');
+                } else {
+                    throw new Error(data.error || 'Batch download failed');
+                }
+                
+            } catch (error) {
+                console.error('Batch download without watermark error:', error);
+                showNotification('Error downloading videos without watermark: ' + error.message, 'error');
+            } finally {
+                // Re-enable button
+                downloadAllNoWatermarkBtn.disabled = false;
+                downloadAllNoWatermarkBtn.innerHTML = '<i class="fas fa-download"></i> Download All No Watermark';
+            }
+        }
+
         // Add event listener for download all button
         downloadAllBtn.addEventListener('click', downloadAllVideos);
+        downloadAllNoWatermarkBtn.addEventListener('click', downloadAllVideosNoWatermark);
         
         // Add event delegation for individual download buttons
         document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('download-btn')) {
+            if (e.target.classList.contains('download-btn') && !e.target.classList.contains('no-watermark')) {
                 e.preventDefault();
                 const videoUrl = e.target.href;
                 const filename = e.target.getAttribute('data-filename') || 'video';
                 downloadVideo(videoUrl, filename);
+            } else if (e.target.classList.contains('download-btn') && e.target.classList.contains('no-watermark')) {
+                e.preventDefault();
+                const workId = e.target.getAttribute('data-work-id');
+                const filename = e.target.getAttribute('data-filename') || 'video';
+                downloadVideoNoWatermark(workId, filename);
             }
         });
     </script>
