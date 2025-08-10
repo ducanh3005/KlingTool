@@ -467,7 +467,8 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
                 if (data.prompt && data.image) {
                     results.push({
                         prompt: data.prompt.trim(),
-                        image: data.image.trim()
+                        image: data.image.trim(),
+                        download_name: data.download_name ? data.download_name.trim() : null
                     });
                 }
             })
@@ -489,6 +490,7 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
                         processedData.push({
                             prompt: row.prompt,
                             originalImage: row.image,
+                            download_name: row.download_name,
                             klingImageUrl: uploadResult.klingUrl, // Use actual Kling URL
                             videoTask: uploadResult.videoTask, // Video generation task info
                             status: 'success',
@@ -501,6 +503,7 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
                         processedData.push({
                             prompt: row.prompt,
                             originalImage: row.image,
+                            download_name: row.download_name,
                             klingImageUrl: null,
                             videoTask: null,
                             status: 'failed',

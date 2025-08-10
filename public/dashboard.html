@@ -845,12 +845,13 @@
         });
 
         function generateCSV(results) {
-            const headers = ['Index', 'Status', 'Prompt', 'Original Image', 'Kling Image URL', 'Video Task ID', 'Error'];
+            const headers = ['Index', 'Status', 'Prompt', 'Original Image', 'Download Name', 'Kling Image URL', 'Video Task ID', 'Error'];
             const rows = results.map((result, index) => [
                 index + 1,
                 result.status,
                 result.prompt,
                 result.originalImage,
+                result.download_name || '',
                 result.klingImageUrl || '',
                 result.videoTask ? result.videoTask.taskId : '',
                 result.error || ''
@@ -970,7 +971,11 @@
                 
                 // Update download button - show if resource exists
                 if (works && works.resource && works.resource.resource) {
-                    downloadElement.innerHTML = `<a href="${works.resource.resource}" target="_blank" class="download-btn">Download MP4</a>`;
+                    // Find the corresponding result to get download_name
+                    const result = processingResults.find(r => r.videoTask && r.videoTask.taskId === taskId);
+                    const downloadName = result && result.download_name ? result.download_name : 'video';
+                    
+                    downloadElement.innerHTML = `<a href="${works.resource.resource}" target="_blank" class="download-btn" data-filename="${downloadName}">Download MP4</a>`;
                     downloadElement.style.display = 'block';
                     timeEstimateElement.textContent = 'Completed ✓';
                     timeEstimateElement.style.color = '#28a745';
@@ -1007,8 +1012,14 @@
 
         // Download functionality
         function downloadVideo(videoUrl, filename) {
-            // Open video in new tab
-            window.open(videoUrl, '_blank');
+            // Create a temporary link element to trigger download with custom filename
+            const a = document.createElement('a');
+            a.href = videoUrl;
+            a.download = `${filename}.mp4`;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function checkAndShowDownloadAll() {
@@ -1035,30 +1046,31 @@
                 const totalVideos = downloadButtons.length;
                 let openedCount = 0;
                 
-                showNotification(`Opening ${totalVideos} videos in new tabs...`, 'info');
+                showNotification(`Downloading ${totalVideos} videos...`, 'info');
                 
                 for (let i = 0; i < downloadButtons.length; i++) {
                     const link = downloadButtons[i];
                     const videoUrl = link.href;
+                    const filename = link.getAttribute('data-filename') || `video_${i + 1}`;
                     
-                    // Open video in new tab
-                    downloadVideo(videoUrl);
+                    // Download video with custom filename
+                    downloadVideo(videoUrl, filename);
                     openedCount++;
                     
                     // Update progress
-                    downloadAllBtn.innerHTML = `<div class="loading-spinner"></div> Opening ${openedCount}/${totalVideos}`;
+                    downloadAllBtn.innerHTML = `<div class="loading-spinner"></div> Downloading ${openedCount}/${totalVideos}`;
                     
-                    // Wait 500ms before next tab to avoid browser blocking
+                    // Wait 500ms before next download to avoid browser blocking
                     if (i < downloadButtons.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 500));
                     }
                 }
                 
-                showNotification(`Opened ${totalVideos} videos in new tabs!`, 'success');
+                showNotification(`Downloaded ${totalVideos} videos!`, 'success');
                 
             } catch (error) {
                 console.error('Error opening videos:', error);
-                showNotification('Error opening videos', 'error');
+                showNotification('Error downloading videos', 'error');
             } finally {
                 // Re-enable button
                 downloadAllBtn.disabled = false;
@@ -1068,6 +1080,16 @@
 
         // Add event listener for download all button
         downloadAllBtn.addEventListener('click', downloadAllVideos);
+        
+        // Add event delegation for individual download buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('download-btn')) {
+                e.preventDefault();
+                const videoUrl = e.target.href;
+                const filename = e.target.getAttribute('data-filename') || 'video';
+                downloadVideo(videoUrl, filename);
+            }
+        });
     </script>
 </body>
 </html> 

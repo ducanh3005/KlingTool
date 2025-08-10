@@ -6,6 +6,7 @@ A powerful tool for batch processing images and generating videos using Kling AI
 
 - **🖼️ Batch Image Upload**: Upload CSV files with multiple image URLs and prompts
 - **🎬 Video Generation**: Automatically generate videos from uploaded images
+- **📁 Custom Filename Downloads**: Download videos with custom filenames from CSV
 - **⏱️ Real-time Monitoring**: Auto-refresh task status every 3 seconds
 - **📊 Progress Tracking**: Visual progress indicators and ETA times
 - **🎨 Modern UI**: Beautiful, responsive dashboard with drag-and-drop
@@ -41,22 +42,24 @@ Open your browser and go to: `http://localhost:3000/dashboard`
 - **Multi-task Monitor**: `http://localhost:3000/test-auto-refresh`
 - **Single Task Monitor**: `http://localhost:3000/test-processing`
 - **Download Features Test**: `http://localhost:3000/test-download`
+- **Custom Filename Test**: `http://localhost:3000/test-custom-filename`
 
 ## 📁 CSV Format
 
 Your CSV file should have the following format:
 
 ```csv
-prompt,image
-"The woman with long wavy blonde hair tilts her head slightly, her light blue eyes gazing softly into the distance as a gentle breeze lifts strands of her hair. The pristine white background gradually reveals faint golden light particles floating upward, maintaining the clean polished aesthetic while the camera slowly zooms in to emphasize her serene expression and subtle pink lips.",https://images.unsplash.com/photo-1506905925346-21bda4d32df4
-"A majestic mountain landscape at sunset with golden light streaming through clouds, creating a dramatic and cinematic atmosphere with smooth camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4
-"A beautiful woman with flowing hair in a magical forest, with sparkles and light effects, cinematic camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4
+prompt,image,download_name
+"The woman with long wavy blonde hair tilts her head slightly, her light blue eyes gazing softly into the distance as a gentle breeze lifts strands of her hair. The pristine white background gradually reveals faint golden light particles floating upward, maintaining the clean polished aesthetic while the camera slowly zooms in to emphasize her serene expression and subtle pink lips.",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,blonde_woman_video
+"A majestic mountain landscape at sunset with golden light streaming through clouds, creating a dramatic and cinematic atmosphere with smooth camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,mountain_sunset_video
+"A beautiful woman with flowing hair in a magical forest, with sparkles and light effects, cinematic camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,forest_woman_video
 ```
 
 ### CSV Requirements:
-- **Header**: Must include `prompt` and `image` columns
+- **Header**: Must include `prompt`, `image`, and optionally `download_name` columns
 - **Prompt**: Detailed description for video generation
 - **Image URL**: Direct link to the image file
+- **Download Name**: Custom filename for the generated video (optional, will use default naming if not provided)
 
 ## 🔄 Task Status Codes
 
@@ -108,18 +111,20 @@ GET /api/video-task/:taskId
 - **Queued**: Indicates waiting status
 
 ### Download Features
-- **Individual Download**: Each completed video has its own download button
-- **Download All**: Bulk download all completed videos with 1-second delay between each
+- **Individual Download**: Each completed video has its own download button with custom filename
+- **Download All**: Bulk download all completed videos with custom filenames and 1-second delay between each
+- **Custom Filenames**: Videos are downloaded with names from the CSV `download_name` column
 - **Auto-refresh Stop**: Stops refreshing when all tasks are completed
 - **Video Metadata**: Shows duration, resolution, and cover image link
 
 ## 📊 Video Information
 
 When a video is completed, you'll see:
-- **Download Link**: Direct link to the video file
+- **Download Link**: Direct link to the video file with custom filename
 - **Duration**: Video length in seconds
 - **Resolution**: Width x Height
 - **Cover Image**: Thumbnail preview (if available)
+- **Custom Filename**: Downloaded video will use the name from CSV `download_name` column
 
 ## 🔧 Configuration
 
@@ -180,7 +185,7 @@ Server logs show:
 
 ### Video Ready
 ```
-🎬 Video: Download Video
+🎬 Video: Download Video (sunset_ocean_video.mp4)
 Duration: 5s | Size: 1368x1516
 Cover: View Cover
 ```
