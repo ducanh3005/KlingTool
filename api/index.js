@@ -904,6 +904,27 @@ app.post('/api/download-no-watermark', async (req, res) => {
                 downloadUrl: downloadResponse.data.downloadUrl,
                 message: 'Video download URL generated successfully'
             });
+        } else if (downloadResponse.data.result === 1 && downloadResponse.data.data && downloadResponse.data.data.cdnUrl) {
+            // Kling API returns cdnUrl instead of downloadUrl
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.cdnUrl,
+                message: 'Video download URL generated successfully'
+            });
+        } else if (downloadResponse.data.data && downloadResponse.data.data.cdnUrl) {
+            // Alternative response format with cdnUrl
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.cdnUrl,
+                message: 'Video download URL generated successfully'
+            });
+        } else if (downloadResponse.data.cdnUrl) {
+            // Direct cdnUrl in response
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.cdnUrl,
+                message: 'Video download URL generated successfully'
+            });
         } else {
             console.error('Unexpected response format:', downloadResponse.data);
             throw new Error(`Download failed: Unexpected response format`);
@@ -1056,6 +1077,27 @@ app.post('/api/download-all-no-watermark', async (req, res) => {
             res.json({
                 success: true,
                 downloadUrl: downloadResponse.data.downloadUrl,
+                message: `Batch download URL generated for ${workIds.length} videos`
+            });
+        } else if (downloadResponse.data.result === 1 && downloadResponse.data.data && downloadResponse.data.data.cdnUrl) {
+            // Kling API returns cdnUrl instead of downloadUrl
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.cdnUrl,
+                message: `Batch download URL generated for ${workIds.length} videos`
+            });
+        } else if (downloadResponse.data.data && downloadResponse.data.data.cdnUrl) {
+            // Alternative response format with cdnUrl
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.data.cdnUrl,
+                message: `Batch download URL generated for ${workIds.length} videos`
+            });
+        } else if (downloadResponse.data.cdnUrl) {
+            // Direct cdnUrl in response
+            res.json({
+                success: true,
+                downloadUrl: downloadResponse.data.cdnUrl,
                 message: `Batch download URL generated for ${workIds.length} videos`
             });
         } else {
