@@ -314,6 +314,16 @@
             font-style: italic;
         }
         
+        .duration-info {
+            margin: 5px 0;
+            padding: 5px 10px;
+            background: #2d5a3a;
+            border-radius: 3px;
+            font-size: 0.9rem;
+            color: #4ade80;
+            display: inline-block;
+        }
+        
         .image-preview {
             width: 100%;
             height: 150px;
@@ -808,12 +818,15 @@
                     ? `<div class="error-message">${result.error}</div>` 
                     : '';
                 
+                const durationInfo = result.duration ? `<div class="duration-info">Duration: ${result.duration}s</div>` : '';
+                
                 card.innerHTML = `
                     <div class="card-header">
                         <strong>Item ${index + 1}</strong>
                         ${statusBadge}
                     </div>
                     <div class="prompt-text">"${result.prompt}"</div>
+                    ${durationInfo}
                     ${imagePreview}
                     ${videoTaskInfo}
                     ${errorMessage}
@@ -845,13 +858,14 @@
         });
 
         function generateCSV(results) {
-            const headers = ['Index', 'Status', 'Prompt', 'Original Image', 'Download Name', 'Kling Image URL', 'Video Task ID', 'Error'];
+            const headers = ['Index', 'Status', 'Prompt', 'Original Image', 'Download Name', 'Duration (s)', 'Kling Image URL', 'Video Task ID', 'Error'];
             const rows = results.map((result, index) => [
                 index + 1,
                 result.status,
                 result.prompt,
                 result.originalImage,
                 result.download_name || '',
+                result.duration || 5,
                 result.klingImageUrl || '',
                 result.videoTask ? result.videoTask.taskId : '',
                 result.error || ''

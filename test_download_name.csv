@@ -1,4 +1,4 @@
-prompt,image,download_name
-A beautiful sunset over the ocean with golden reflections,https://images2.thanhnien.vn/Uploaded/thuyttl/2022_02_21/1-lee-sung-kyung-339.jpg,sunset_ocean_video
-A majestic mountain landscape with snow peaks,https://example.com/mountain.jpg,mountain_landscape_video
-A peaceful forest scene with morning mist,https://example.com/forest.jpg,forest_morning_video
+prompt,image,download_name,duration
+A beautiful sunset over the ocean with golden reflections,https://images2.thanhnien.vn/Uploaded/thuyttl/2022_02_21/1-lee-sung-kyung-339.jpg,sunset_ocean_video,10
+A majestic mountain landscape with snow peaks,https://example.com/mountain.jpg,mountain_landscape_video,15
+A peaceful forest scene with morning mist,https://example.com/forest.jpg,forest_morning_video,5

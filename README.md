@@ -5,7 +5,7 @@ A powerful tool for batch processing images and generating videos using Kling AI
 ## ✨ Features
 
 - **🖼️ Batch Image Upload**: Upload CSV files with multiple image URLs and prompts
-- **🎬 Video Generation**: Automatically generate videos from uploaded images
+- **🎬 Video Generation**: Automatically generate videos from uploaded images with customizable duration
 - **📁 Custom Filename Downloads**: Download videos with custom filenames from CSV
 - **⏱️ Real-time Monitoring**: Auto-refresh task status every 3 seconds
 - **📊 Progress Tracking**: Visual progress indicators and ETA times
@@ -43,23 +43,25 @@ Open your browser and go to: `http://localhost:3000/dashboard`
 - **Single Task Monitor**: `http://localhost:3000/test-processing`
 - **Download Features Test**: `http://localhost:3000/test-download`
 - **Custom Filename Test**: `http://localhost:3000/test-custom-filename`
+- **Duration Feature Test**: `http://localhost:3000/test-duration-feature`
 
 ## 📁 CSV Format
 
 Your CSV file should have the following format:
 
 ```csv
-prompt,image,download_name
-"The woman with long wavy blonde hair tilts her head slightly, her light blue eyes gazing softly into the distance as a gentle breeze lifts strands of her hair. The pristine white background gradually reveals faint golden light particles floating upward, maintaining the clean polished aesthetic while the camera slowly zooms in to emphasize her serene expression and subtle pink lips.",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,blonde_woman_video
-"A majestic mountain landscape at sunset with golden light streaming through clouds, creating a dramatic and cinematic atmosphere with smooth camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,mountain_sunset_video
-"A beautiful woman with flowing hair in a magical forest, with sparkles and light effects, cinematic camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,forest_woman_video
+prompt,image,download_name,duration
+"The woman with long wavy blonde hair tilts her head slightly, her light blue eyes gazing softly into the distance as a gentle breeze lifts strands of her hair. The pristine white background gradually reveals faint golden light particles floating upward, maintaining the clean polished aesthetic while the camera slowly zooms in to emphasize her serene expression and subtle pink lips.",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,blonde_woman_video,10
+"A majestic mountain landscape at sunset with golden light streaming through clouds, creating a dramatic and cinematic atmosphere with smooth camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,mountain_sunset_video,15
+"A beautiful woman with flowing hair in a magical forest, with sparkles and light effects, cinematic camera movement",https://images.unsplash.com/photo-1506905925346-21bda4d32df4,forest_woman_video,5
 ```
 
 ### CSV Requirements:
-- **Header**: Must include `prompt`, `image`, and optionally `download_name` columns
+- **Header**: Must include `prompt`, `image`, and optionally `download_name`, `duration` columns
 - **Prompt**: Detailed description for video generation
 - **Image URL**: Direct link to the image file
 - **Download Name**: Custom filename for the generated video (optional, will use default naming if not provided)
+- **Duration**: Video duration in seconds (optional, defaults to 5 seconds if not provided)
 
 ## 🔄 Task Status Codes
 
@@ -88,7 +90,8 @@ Content-Type: application/json
 
 {
   "imageUrl": "https://example.com/image.jpg",
-  "prompt": "Your video description"
+  "prompt": "Your video description",
+  "duration": 10
 }
 ```
 

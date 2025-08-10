@@ -32,13 +32,14 @@ async function testVideoGeneration() {
             console.log(JSON.stringify(response2.data, null, 2));
         }
         
-        // Test 3: Generate video with custom prompt
-        console.log('\n🔄 Test 3: Generate video with custom prompt...');
+        // Test 3: Generate video with custom prompt and duration
+        console.log('\n🔄 Test 3: Generate video with custom prompt and duration...');
         const customPrompt = "A beautiful woman with flowing hair in a magical forest, with sparkles and light effects, cinematic camera movement";
         
         const response3 = await axios.post('http://localhost:3000/api/generate-video', {
             imageUrl: testImageUrl,
-            prompt: customPrompt
+            prompt: customPrompt,
+            duration: 10
         });
         
         console.log('✅ Test 3 Result:');

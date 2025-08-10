@@ -78,7 +78,7 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 2000) {
 }
 
 // Generate video from image URL
-async function generateVideoFromImage(imageUrl, prompt = null) {
+async function generateVideoFromImage(imageUrl, prompt = null, duration = 5) {
     try {
         console.log(`Generating video from image: ${imageUrl}`);
         
@@ -123,7 +123,7 @@ async function generateVideoFromImage(imageUrl, prompt = null) {
             arguments: [
                 { name: "prompt", value: finalPrompt },
                 { name: "negative_prompt", value: "" },
-                { name: "duration", value: "5" },
+                { name: "duration", value: duration.toString() },
                 { name: "imageCount", value: "1" },
                 { name: "kling_version", value: "2.1" },
                 { name: "camera_json", value: '{"type":"empty","horizontal":0,"vertical":0,"zoom":0,"tilt":0,"pan":0,"roll":0}' },
@@ -194,7 +194,7 @@ async function generateVideoFromImage(imageUrl, prompt = null) {
 }
 
 // Upload image to Kling
-async function uploadImageToKling(imageUrl, prompt = null) {
+async function uploadImageToKling(imageUrl, prompt = null, duration = 5) {
     try {
         console.log(`Processing image: ${imageUrl}`);
         
@@ -419,9 +419,9 @@ async function uploadImageToKling(imageUrl, prompt = null) {
             const klingUrl = verifyResponse.data.data.url;
             console.log(`Kling upload successful: ${klingUrl}`);
             
-            // Generate video from uploaded image with prompt from CSV
-            console.log('Starting video generation...');
-            const videoResult = await generateVideoFromImage(klingUrl, prompt);
+            // Generate video from uploaded image with prompt and duration from CSV
+            console.log(`Starting video generation with duration: ${duration}s...`);
+            const videoResult = await generateVideoFromImage(klingUrl, prompt, duration);
             
             return {
                 success: true,
@@ -468,7 +468,8 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
                     results.push({
                         prompt: data.prompt.trim(),
                         image: data.image.trim(),
-                        download_name: data.download_name ? data.download_name.trim() : null
+                        download_name: data.download_name ? data.download_name.trim() : null,
+                        duration: data.duration ? parseInt(data.duration.trim()) : 5
                     });
                 }
             })
@@ -486,11 +487,12 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
                     console.log(`Processing item ${i + 1}/${results.length}: ${row.image}`);
                     
                     try {
-                        const uploadResult = await uploadImageToKling(row.image, row.prompt);
+                        const uploadResult = await uploadImageToKling(row.image, row.prompt, row.duration);
                         processedData.push({
                             prompt: row.prompt,
                             originalImage: row.image,
                             download_name: row.download_name,
+                            duration: row.duration,
                             klingImageUrl: uploadResult.klingUrl, // Use actual Kling URL
                             videoTask: uploadResult.videoTask, // Video generation task info
                             status: 'success',
@@ -504,6 +506,7 @@ app.post('/api/upload-csv', upload.single('file'), async (req, res) => {
                             prompt: row.prompt,
                             originalImage: row.image,
                             download_name: row.download_name,
+                            duration: row.duration,
                             klingImageUrl: null,
                             videoTask: null,
                             status: 'failed',

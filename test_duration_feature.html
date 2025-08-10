@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Duration Feature</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Test Duration Feature</h1>
+        
+        <div class="info">
+            <h3>📋 Test Description</h3>
+            <p>This page tests the new customizable duration feature for video generation. You can specify different durations (5s, 10s, 15s, 30s) for video generation.</p>
+        </div>
+
+        <div class="test-card">
+            <h3>🔄 Test Single Video Generation with Duration</h3>
+            <div class="form-group">
+                <label for="imageUrl">Image URL:</label>
+                <input type="text" id="imageUrl" value="https://images2.thanhnien.vn/Uploaded/thuyttl/2022_02_21/1-lee-sung-kyung-339.jpg" placeholder="Enter image URL">
+            </div>
+            <div class="form-group">
+                <label for="prompt">Prompt:</label>
+                <textarea id="prompt" rows="3" placeholder="Enter video description">A beautiful sunset over the ocean with golden reflections</textarea>
+            </div>
+            <div class="form-group">
+                <label for="duration">Duration (seconds):</label>
+                <select id="duration">
+                    <option value="5">5 seconds</option>
+                    <option value="10" selected>10 seconds</option>
+                    <option value="15">15 seconds</option>
+                    <option value="30">30 seconds</option>
+                </select>
+            </div>
+            <button onclick="testSingleVideo()">Generate Video</button>
+        </div>
+
+        <div class="test-card">
+            <h3>📁 Test CSV Upload with Duration</h3>
+            <div class="form-group">
+                <label for="csvFile">Upload CSV File:</label>
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+            <button onclick="testCSVUpload()">Upload and Process CSV</button>
+        </div>
+
+        <div class="test-card">
+            <h3>📊 Test Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="info success">
+            <h3>✅ How to Test</h3>
+            <ol>
+                <li>Test single video generation with different durations</li>
+                <li>Upload a CSV file with duration column</li>
+                <li>Check that videos are generated with the specified duration</li>
+                <li>Verify that duration information is displayed in results</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>📋 CSV Format with Duration</h3>
+            <pre>prompt,image,download_name,duration
+"A beautiful sunset over the ocean",https://example.com/sunset.jpg,sunset_video,10
+"A majestic mountain landscape",https://example.com/mountain.jpg,mountain_video,15
+"A peaceful forest scene",https://example.com/forest.jpg,forest_video,5</pre>
+        </div>
+    </div>
+
+    <script>
+        async function testSingleVideo() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const prompt = document.getElementById('prompt').value;
+            const duration = parseInt(document.getElementById('duration').value);
+            
+            if (!imageUrl || !prompt) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">🔄 Generating video with duration: ' + duration + 's...</div>';
+            
+            try {
+                const response = await fetch('/api/generate-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imageUrl: imageUrl,
+                        prompt: prompt,
+                        duration: duration
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="result success">
+✅ Video generation started successfully!
+
+📋 Details:
+- Image URL: ${imageUrl}
+- Prompt: ${prompt}
+- Duration: ${duration}s
+- Task ID: ${data.data.videoTask.taskId}
+- Status: ${data.data.videoTask.taskStatus}
+
+🎬 Task created at: ${new Date(data.data.videoTask.createTime).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Error: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testCSVUpload() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result">🔄 Uploading and processing CSV file...</div>';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    let resultHtml = `
+                        <div class="result success">
+✅ CSV processed successfully!
+
+📊 Summary:
+- Total items: ${data.total}
+- Successful: ${data.successful}
+- Failed: ${data.failed}
+
+📋 Details:
+`;
+                    
+                    data.data.forEach((item, index) => {
+                        resultHtml += `
+Item ${index + 1}:
+- Prompt: ${item.prompt}
+- Duration: ${item.duration || 5}s
+- Status: ${item.status}
+- Download Name: ${item.download_name || 'N/A'}
+${item.error ? '- Error: ' + item.error : ''}
+`;
+                    });
+                    
+                    resultHtml += '</div>';
+                    resultsDiv.innerHTML = resultHtml;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Error: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result" style="background: #f8d7da; border-color: #f5c6cb; color: #721c24;">
+❌ Network Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
